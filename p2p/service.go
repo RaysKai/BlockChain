@@ -1,23 +1,23 @@
 package p2p
 
 import (
-	"fmt"
-	//"github.com/linkchain/common"
+	_ "fmt"
+	"github.com/linkchain/common/util/log"
 )
 
-type Service struct{
+type Service struct {
 }
 
-func (s *Service) Init(i interface{}) bool{
-	fmt.Println("p2p service init...");
+func (s *Service) Init(i interface{}) bool {
+	log.Info("p2p service init...")
 	return true
 }
 
-func (s *Service) Start() bool{
-	fmt.Println("p2p service start...");
+func (s *Service) Start() bool {
+	log.Info("p2p service start...")
 	return true
 }
 
-func (s *Service) Stop(){
-	fmt.Println("p2p service stop...");
+func (s *Service) Stop() {
+	log.Info("p2p service stop...")
 }
