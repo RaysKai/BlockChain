@@ -1,7 +1,6 @@
 package p2p
 
 import (
-	_ "fmt"
 	"github.com/linkchain/common/util/log"
 )
 
@@ -20,4 +19,9 @@ func (s *Service) Start() bool {
 
 func (s *Service) Stop() {
 	log.Info("p2p service stop...")
+}
+
+
+func (s *Service ) Foo(){
+	log.Info("FOOO");
 }
