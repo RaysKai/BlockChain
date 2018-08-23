@@ -1,7 +1,6 @@
 package consensus
 
 import (
-	"fmt"
 	"github.com/linkchain/common/util/log"
 )
 
