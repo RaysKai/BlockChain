@@ -7,6 +7,26 @@
 			"path": "github.com/go-stack/stack",
 			"revision": "259ab82a6cad3992b4e21ff5cac294ccb06474bc",
 			"revisionTime": "2017-11-12T03:14:02Z"
+		},
+		{
+			"checksumSHA1": "6R6VIJm2rsJ2X44pX4ElzFlKfvs=",
+			"path": "github.com/sirupsen/logrus",
+			"revision": "fc587f31c804fe6853cd90f0d8d90af588eca5bd",
+			"revisionTime": "2018-08-17T01:25:29Z"
+		},
+		{
+			"checksumSHA1": "RNZVUXltgXt6PpOnGPeltxdfzto=",
+			"path": "golang.org/x/crypto",
+			"revision": "614d502a4dac94afa3a6ce146bd1736da82514c6",
+			"revisionTime": "2018-07-28T08:01:47Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "sWwVc1Hk6ULKc9WD/pMeEv8U4c0=",
+			"path": "golang.org/x/sys",
+			"revision": "11551d06cbcc94edc80a0facaccbda56473c19c1",
+			"revisionTime": "2018-08-23T14:12:18Z",
+			"tree": true
 		}
 	],
 	"rootPath": "github.com/linkchain"
