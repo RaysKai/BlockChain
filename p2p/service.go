@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/common"
 )
 
 type Service struct {
