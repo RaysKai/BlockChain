@@ -1,4 +1,4 @@
-package meta
+package math
 
 import (
 	"encoding/hex"
