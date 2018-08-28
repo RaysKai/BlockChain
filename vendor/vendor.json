@@ -9,18 +9,6 @@
 			"revisionTime": "2017-11-12T03:14:02Z"
 		},
 		{
-			"checksumSHA1": "cRxfZM32wP1Ry67s3jLRoYxAz/E=",
-			"path": "github.com/golang/protobuf/proto",
-			"revision": "748d386b5c1ea99658fd69fe9f03991ce86a90c1",
-			"revisionTime": "2017-07-26T21:28:29Z"
-		},
-		{
-			"checksumSHA1": "ShrW78DS7cme1kgz+uhS3454wHU=",
-			"path": "github.com/golang/protobuf/protoc-gen-go/descriptor",
-			"revision": "748d386b5c1ea99658fd69fe9f03991ce86a90c1",
-			"revisionTime": "2017-07-26T21:28:29Z"
-		},
-		{
 			"checksumSHA1": "6R6VIJm2rsJ2X44pX4ElzFlKfvs=",
 			"path": "github.com/sirupsen/logrus",
 			"revision": "fc587f31c804fe6853cd90f0d8d90af588eca5bd",
