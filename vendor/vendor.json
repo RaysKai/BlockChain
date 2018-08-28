@@ -15,6 +15,12 @@
 			"revisionTime": "2018-08-17T01:25:29Z"
 		},
 		{
+			"checksumSHA1": "XORIKW/swQC/k75MTiIvnmUNK8U=",
+			"path": "github.com/spf13/cobra",
+			"revision": "6fd8e29b07d8242ebe2888060fede5766e240c25",
+			"revisionTime": "2018-08-21T16:12:02Z"
+		},
+		{
 			"checksumSHA1": "RNZVUXltgXt6PpOnGPeltxdfzto=",
 			"path": "golang.org/x/crypto",
 			"revision": "614d502a4dac94afa3a6ce146bd1736da82514c6",

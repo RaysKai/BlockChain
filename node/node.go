@@ -20,11 +20,11 @@ var (
 )
 
 
-func Init(){
+func Init() {
 	log.Info("Node init...")
 
 	//init all service
-	for _,v := range svcList{
+	for _, v := range svcList {
 		v.Init(nil)
 	}
 }
