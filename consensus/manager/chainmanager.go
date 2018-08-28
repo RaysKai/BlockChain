@@ -1,8 +1,10 @@
 package manager
 
-import "github.com/linkchain/meta"
+import (
+	"github.com/linkchain/meta"
+	"github.com/linkchain/common"
+)
 
-type ChainManager interface{}
 
 type ChainReader interface{
 
@@ -15,4 +17,17 @@ type ChainReader interface{
 	GetBlockByHeight(height uint32) meta.Block
 
 	GetBlockChainInfo() string
+}
+
+type ChainWriter interface{
+
+	AddBlock(block meta.Block)
+
+	UpdateChain() bool
+}
+
+type ChainManager interface{
+	common.IService
+	ChainWriter
+	ChainReader
 }

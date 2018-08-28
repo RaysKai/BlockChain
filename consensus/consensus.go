@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/meta"
 	"github.com/linkchain/consensus/poa"
 	"github.com/linkchain/common"
 )
@@ -17,8 +16,8 @@ type Service struct{
 
 type ConsensusService interface {
 	common.IService
-	ProcessBlock(block meta.Block)
-	ProcessTx(tx meta.Transaction)
+	ProcessBlock(block interface{})
+	ProcessTx(tx interface{})
 }
 
 func (s *Service) Init(i interface{}) bool{
@@ -39,12 +38,12 @@ func (s *Service) Stop(){
 	service.Stop()
 }
 
-func (s *Service) ProcessBlock(block meta.Block){
+func (s *Service) ProcessBlock(block interface{}){
 	log.Info("ProcessBlock ...");
 	service.ProcessBlock(block)
 }
 
-func (s *Service) ProcessTx(tx meta.Transaction){
+func (s *Service) ProcessTx(tx interface{}){
 	log.Info("ProcessTx ...");
 	service.ProcessTx(tx)
 }

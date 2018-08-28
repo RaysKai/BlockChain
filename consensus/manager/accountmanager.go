@@ -1,4 +1,5 @@
 package manager
 
-
-type AccountManager interface{}
+type AccountManager interface{
+	GetAccount() string
+}
