@@ -21,6 +21,12 @@
 			"revisionTime": "2018-08-21T16:12:02Z"
 		},
 		{
+			"checksumSHA1": "egfheShGROUlwCTjbXjQJTYsGMg=",
+			"path": "github.com/spf13/pflag",
+			"revision": "d929dcbb10863323c436af3cf76cb16a6dfc9b29",
+			"revisionTime": "2018-08-21T11:45:17Z"
+		},
+		{
 			"checksumSHA1": "RNZVUXltgXt6PpOnGPeltxdfzto=",
 			"path": "golang.org/x/crypto",
 			"revision": "614d502a4dac94afa3a6ce146bd1736da82514c6",
