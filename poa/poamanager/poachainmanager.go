@@ -18,8 +18,8 @@ type POAChainManager struct {
 
 func (m *POAChainManager) Init(i interface{}) bool{
 	log.Info("POAChainManager init...");
-	mainchain = make([]poameta.POABlock,1)
-	bestHeight=0;
+	mainchain = make([]poameta.POABlock,0)
+	bestHeight = -1;
 	return true
 }
 
@@ -33,19 +33,31 @@ func (s *POAChainManager) Stop(){
 }
 
 func (m *POAChainManager) GetBestBlock() block.IBlock  {
-	return &mainchain[bestHeight];
+	if len(mainchain) <= (bestHeight + 1) {
+		return &mainchain[bestHeight];
+	}
+	return nil
 }
 
 func (m *POAChainManager) GetMainChain() block.IBlock  {
-	return &mainchain[bestHeight];
+	if len(mainchain) <= (bestHeight + 1) {
+		return &mainchain[bestHeight];
+	}
+	return nil
 }
 
 func (m *POAChainManager) GetBlockByHash(h math.Hash) block.IBlock  {
-	return &mainchain[bestHeight];
+	if len(mainchain) <= (bestHeight + 1) {
+		return &mainchain[bestHeight];
+	}
+	return nil
 }
 
 func (m *POAChainManager) GetBlockByHeight(height uint32) block.IBlock  {
-	return &mainchain[height];
+	if len(mainchain) <= (bestHeight + 1) {
+		return &mainchain[bestHeight];
+	}
+	return nil
 }
 
 func (m *POAChainManager) GetBlockChainInfo() string  {
@@ -53,7 +65,7 @@ func (m *POAChainManager) GetBlockChainInfo() string  {
 }
 
 func (m *POAChainManager) AddBlock(block block.IBlock)  {
-	//mainchain = append(mainchain,block)
+	mainchain = append(mainchain,*(block.(*poameta.POABlock)))
 	bestHeight++
 }
 

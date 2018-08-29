@@ -61,7 +61,7 @@ func (b *POABlock)GetBlockID() block.IBlockID{
 	buf := bytes.NewBuffer(data)
 	binary.Write(buf, binary.BigEndian, b.Header.Version)
 
-	first := sha256.Sum256(data)
+	first := sha256.Sum256(buf.Bytes())
 	return math.Hash(sha256.Sum256(first[:]))
 }
 
