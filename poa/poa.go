@@ -2,21 +2,17 @@ package poa
 
 import (
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/consensus/validator"
 	"github.com/linkchain/poa/poamanager"
 	"github.com/linkchain/meta/block"
 	"github.com/linkchain/meta/tx"
 )
 
 type Service struct{
-	blockValidator validator.BlockValidator
-	transactionValidator validator.TransactionVlidator
+
 }
 
 func (s *Service) Init(i interface{}) bool{
 	log.Info("poa consensus service init...")
-	s.blockValidator = &POAValidator{}
-	s.transactionValidator = &POAValidator{}
 	poamanager.GetInstance().Init(nil)
 	return true
 }
@@ -35,7 +31,7 @@ func (s *Service) Stop(){
 func (s *Service) ProcessBlock(block block.IBlock){
 	log.Info("poa ProcessBlock ...")
 	//1.checkBlock
-	if !s.blockValidator.CheckBlock(block) {
+	if !poamanager.GetInstance().BlockMgr.CheckBlock(block) {
 		log.Error("poa checkBlock failed")
 		return
 	}
@@ -49,7 +45,7 @@ func (s *Service) ProcessBlock(block block.IBlock){
 func (s *Service) ProcessTx(tx tx.ITransaction){
 	log.Info("poa ProcessTx ...")
 	//1.checkTx
-	if !s.transactionValidator.CheckTx(tx) {
+	if !poamanager.GetInstance().TransactionMgr.CheckTx(tx) {
 		log.Error("poa checkTransaction failed")
 		return
 	}

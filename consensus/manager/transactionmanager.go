@@ -6,6 +6,20 @@ import (
 )
 
 type TransactionManager interface{
-	GetTransaction(txid hash.Hash) tx.ITransaction
+	TransactionValidator
+	NewTransaction() tx.ITransaction
+	SignTransaction(tx tx.ITransaction) error
+	ProcessTx(tx tx.ITransaction)
+}
+
+type TransactionPoolManager interface{
+	AddTransaction(tx tx.ITransaction) error
+	GetTransaction(txid hash.Hash) (tx.ITransaction,error)
+	removeTransaction(txid hash.Hash) error
+
+}
+
+type TransactionValidator  interface {
+	CheckTx(tx tx.ITransaction) bool
 }
 
