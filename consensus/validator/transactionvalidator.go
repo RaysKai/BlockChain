@@ -1,7 +1,7 @@
 package validator
 
-import "github.com/linkchain/meta"
+import "github.com/linkchain/meta/tx"
 
 type TransactionVlidator interface {
-	CheckTx(tx meta.Transaction) bool
+	CheckTx(tx tx.ITransaction) bool
 }

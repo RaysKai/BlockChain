@@ -1,27 +1,28 @@
 package manager
 
 import (
-	"github.com/linkchain/meta"
 	"github.com/linkchain/common"
+	"github.com/linkchain/meta/block"
+	"github.com/linkchain/common/math"
 )
 
 
 type ChainReader interface{
 
-	GetBestHeader() *meta.BlockHeader
+	GetBestBlock() block.IBlock
 
-	GetMainChain() *meta.BlockHeader
+	GetMainChain() block.IBlock
 
-	GetBlockByHash(h *meta.Hash) meta.Block
+	GetBlockByHash(h math.Hash) block.IBlock
 
-	GetBlockByHeight(height uint32) meta.Block
+	GetBlockByHeight(height uint32) block.IBlock
 
 	GetBlockChainInfo() string
 }
 
 type ChainWriter interface{
 
-	AddBlock(block meta.Block)
+	AddBlock(block block.IBlock)
 
 	UpdateChain() bool
 }

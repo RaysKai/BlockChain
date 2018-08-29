@@ -3,8 +3,9 @@ package poa
 import (
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/consensus/validator"
-	"github.com/linkchain/meta"
-	"github.com/linkchain/consensus/poa/poamanager"
+	"github.com/linkchain/poa/poamanager"
+	"github.com/linkchain/meta/block"
+	"github.com/linkchain/meta/tx"
 )
 
 type Service struct{
@@ -31,10 +32,10 @@ func (s *Service) Stop(){
 	poamanager.GetInstance().Stop()
 }
 
-func (s *Service) ProcessBlock(block interface{}){
+func (s *Service) ProcessBlock(block block.IBlock){
 	log.Info("poa ProcessBlock ...")
 	//1.checkBlock
-	if !s.blockValidator.CheckBlock(block.(meta.Block)) {
+	if !s.blockValidator.CheckBlock(block) {
 		log.Error("poa checkBlock failed")
 		return
 	}
@@ -45,10 +46,10 @@ func (s *Service) ProcessBlock(block interface{}){
 	//3.updateStorage
 }
 
-func (s *Service) ProcessTx(tx interface{}){
+func (s *Service) ProcessTx(tx tx.ITransaction){
 	log.Info("poa ProcessTx ...")
 	//1.checkTx
-	if !s.transactionValidator.CheckTx(tx.(meta.Transaction)) {
+	if !s.transactionValidator.CheckTx(tx) {
 		log.Error("poa checkTransaction failed")
 		return
 	}

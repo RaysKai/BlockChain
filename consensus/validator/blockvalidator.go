@@ -1,8 +1,8 @@
 package validator
 
-import "github.com/linkchain/meta"
+import "github.com/linkchain/meta/block"
 
 type BlockValidator interface {
-	CheckBlock(block meta.Block) bool
+	CheckBlock(block block.IBlock) bool
 }
 

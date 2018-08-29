@@ -28,6 +28,13 @@ func (hash Hash) String() string {
 	return hex.EncodeToString(hash[:])
 }
 
+func (hash Hash) GetString() string {
+	for i := 0; i < HashSize/2; i++ {
+		hash[i], hash[HashSize-1-i] = hash[HashSize-1-i], hash[i]
+	}
+	return hex.EncodeToString(hash[:])
+}
+
 // CloneBytes returns a copy of the bytes which represent the hash as a byte
 // slice.
 //

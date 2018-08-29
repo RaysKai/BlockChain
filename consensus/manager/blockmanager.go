@@ -1,7 +1,7 @@
 package manager
 
-import "github.com/linkchain/meta"
+import "github.com/linkchain/meta/block"
 
 type BlockManager interface {
-	GetBlockDetail() meta.Block
+	GetBlockDetail() block.IBlock
 }
