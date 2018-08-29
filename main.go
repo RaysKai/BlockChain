@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/cmd"
-	"bufio"
 	"strings"
+	"bufio"
 )
 
 
@@ -29,7 +29,7 @@ func main() {
 
 			cmd.RootCmd.SetArgs(words)
 			cmd.RootCmd.Execute()
-
 		}
+
 	}
 }

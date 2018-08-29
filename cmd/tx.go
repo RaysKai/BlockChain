@@ -12,7 +12,7 @@ func init() {
 
 var txCmd = &cobra.Command{
 	Use:   "tx",
-	Short: "generate a new block",
+	Short: "all tx related command",
 }
 
 var createTxCmd = &cobra.Command{
