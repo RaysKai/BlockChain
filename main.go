@@ -19,7 +19,7 @@ func main() {
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
-		fmt.Print(">: ")
+		fmt.Print(">")
 		// Scans a line from Stdin(Console)
 		scanner.Scan()
 		// Holds the string that scanned
