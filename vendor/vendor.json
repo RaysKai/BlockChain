@@ -3,6 +3,12 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "YdWmkLgfIqoZgQA0bWB71jCizpc=",
+			"path": "github.com/aristanetworks/goarista/monotime",
+			"revision": "602babfda73b0e88f5d5a2463d2d5addfbc8d666",
+			"revisionTime": "2018-08-29T17:58:32Z"
+		},
+		{
 			"checksumSHA1": "luu+ud4XYZhlCoNnSAwCJlbh0Bg=",
 			"path": "github.com/go-stack/stack",
 			"revision": "259ab82a6cad3992b4e21ff5cac294ccb06474bc",
