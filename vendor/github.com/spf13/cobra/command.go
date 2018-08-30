@@ -850,6 +850,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	}
 
 	err = cmd.execute(flags)
+	cmd.ResetFlags()
 	if err != nil {
 		// Always show help if requested, even if SilenceErrors is in
 		// effect
