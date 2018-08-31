@@ -49,11 +49,15 @@ type Msg struct {
 // the given value, which must be a pointer.
 //
 // For the decoding rules, please see package rlp.
-func (msg Msg) Decode(val interface{}) error {
-	//	s := rlp.NewStream(msg.Payload, uint64(msg.Size))
-	//	if err := s.Decode(val); err != nil {
-	//		return newPeerError(errInvalidMsg, "(code %x) (size %d) %v", msg.Code, msg.Size, err)
-	//	}
+func (msg Msg) Decode(data proto.Message) error {
+	content, err := ioutil.ReadAll(msg.Payload)
+	if err != nil {
+		return newPeerError(errInvalidMsg, "(code %x) (size %d) %v", msg.Code, msg.Size, err)
+	}
+
+	if err := proto.Unmarshal(content, data); err != nil {
+		return newPeerError(errInvalidMsg, "(code %x) (size %d) %v", msg.Code, msg.Size, err)
+	}
 	return nil
 }
 
