@@ -1,0 +1,7 @@
+syntax = "proto2";
+package msg;
+
+message Msg {
+  required uint64 code = 1;
+  optional bytes payload = 2 ;
+}

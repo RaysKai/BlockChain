@@ -1,15 +1,15 @@
 package p2p
 
 import (
-	_ "bytes"
+	"bytes"
 	"errors"
 	"fmt"
+	"github.com/golang/protobuf/proto"
+	"github.com/linkchain/common/util/event"
 	"io"
 	"io/ioutil"
 	"sync/atomic"
 	"time"
-
-	"github.com/linkchain/common/util/event"
 )
 
 const NodeIDBits = 512
@@ -90,14 +90,12 @@ type MsgReadWriter interface {
 
 // Send writes an RLP-encoded message with the given code.
 // data should encode as an RLP list.
-func Send(w MsgWriter, msgcode uint64, data interface{}) error {
-	//	size, r, err := rlp.EncodeToReader(data)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	return w.WriteMsg(Msg{Code: msgcode, Size: uint32(size), Payload: r})
-
-	return nil
+func Send(w MsgWriter, msgcode uint64, data proto.Message) error {
+	r, err := proto.Marshal(data)
+	if err != nil {
+		return err
+	}
+	return w.WriteMsg(Msg{Code: msgcode, Size: uint32(len(r)), Payload: bytes.NewReader(r)})
 }
 
 // SendItems writes an RLP with the given code and data elements.
@@ -109,7 +107,7 @@ func Send(w MsgWriter, msgcode uint64, data interface{}) error {
 //
 //    [e1, e2, e3]
 //
-func SendItems(w MsgWriter, msgcode uint64, elems ...interface{}) error {
+func SendItems(w MsgWriter, msgcode uint64, elems proto.Message) error {
 	return Send(w, msgcode, elems)
 }
 
