@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"github.com/linkchain/poa"
+	"github.com/linkchain/consensus/manager"
 )
 
 var (
@@ -31,3 +32,18 @@ func (s *Service) Stop(){
 	service.Stop()
 }
 
+func (s *Service) GetBlockManager() manager.BlockManager {
+	return service.GetManager().BlockMgr
+}
+
+func (s *Service) GetTXManager() manager.TransactionManager {
+	return service.GetManager().TransactionMgr
+}
+
+func (s *Service) GetAccountManager() manager.AccountManager {
+	return service.GetManager().AccountMgr
+}
+
+func (s *Service) GetChainManager() manager.ChainManager {
+	return service.GetManager().ChainMgr
+}

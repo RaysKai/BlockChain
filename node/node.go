@@ -6,7 +6,6 @@ import (
 	"github.com/linkchain/p2p"
 	"github.com/linkchain/consensus"
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/poa/poamanager"
 )
 
 
@@ -35,6 +34,7 @@ func Run(){
 	for _,v := range svcList{
 		v.Start()
 	}
-	block :=poamanager.GetManager().BlockMgr.NewBlock()
-	poamanager.GetManager().BlockMgr.ProcessBlock(block)
+
+	block :=svcList[1].(*consensus.Service).GetBlockManager().NewBlock()
+	svcList[1].(*consensus.Service).GetBlockManager().ProcessBlock(block)
 }

@@ -25,3 +25,7 @@ func (s *Service) Stop(){
 	log.Info("poa consensus service stop...")
 	poamanager.GetManager().Stop()
 }
+
+func (s *Service) GetManager() *poamanager.POAManager {
+	return poamanager.GetManager()
+}
