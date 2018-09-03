@@ -2,6 +2,7 @@ package p2p
 
 import (
 	_ "github.com/linkchain/common/util/log"
+	"github.com/linkchain/p2p/node"
 	"net"
 )
 
@@ -32,15 +33,15 @@ type conn struct {
 	fd net.Conn
 	transport
 	flags connFlag
-	cont  chan error // The run loop uses cont to signal errors to SetupConn.
-	id    NodeID     // valid after the encryption handshake
-	caps  []Cap      // valid after the protocol handshake
-	name  string     // valid after the protocol handshake
+	cont  chan error  // The run loop uses cont to signal errors to SetupConn.
+	id    node.NodeID // valid after the encryption handshake
+	caps  []Cap       // valid after the protocol handshake
+	name  string      // valid after the protocol handshake
 }
 
 func (c *conn) String() string {
 	s := c.flags.String()
-	if (c.id != NodeID{}) {
+	if (c.id != node.NodeID{}) {
 		s += " " + c.id.String()
 	}
 	s += " " + c.fd.RemoteAddr().String()

@@ -2,6 +2,8 @@ package p2p
 
 import (
 	"fmt"
+
+	"github.com/linkchain/p2p/node"
 )
 
 // Protocol represents a P2P subprotocol implementation.
@@ -33,7 +35,7 @@ type Protocol struct {
 	// PeerInfo is an optional helper method to retrieve protocol specific metadata
 	// about a certain peer in the network. If an info retrieval function is set,
 	// but returns nil, it is assumed that the protocol handshake is still running.
-	PeerInfo func(id NodeID) interface{}
+	PeerInfo func(id node.NodeID) interface{}
 }
 
 func (p Protocol) cap() Cap {

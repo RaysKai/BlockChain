@@ -6,30 +6,12 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/util/event"
+	"github.com/linkchain/p2p/node"
 	"io"
 	"io/ioutil"
 	"sync/atomic"
 	"time"
 )
-
-const NodeIDBits = 512
-
-type NodeID [NodeIDBits / 8]byte
-
-// Bytes returns a byte slice representation of the NodeID
-func (n NodeID) Bytes() []byte {
-	return n[:]
-}
-
-// NodeID prints as a long hexadecimal number.
-func (n NodeID) String() string {
-	return fmt.Sprintf("%x", n[:])
-}
-
-// The Go syntax representation of a NodeID is a call to HexID.
-func (n NodeID) GoString() string {
-	return fmt.Sprintf("discover.HexID(\"%x\")", n[:])
-}
 
 // Msg defines the structure of a p2p message.
 //
@@ -260,13 +242,13 @@ type msgEventer struct {
 	MsgReadWriter
 
 	feed     *event.Feed
-	peerID   NodeID
+	peerID   node.NodeID
 	Protocol string
 }
 
 // newMsgEventer returns a msgEventer which sends message events to the given
 // feed
-func newMsgEventer(rw MsgReadWriter, feed *event.Feed, peerID NodeID, proto string) *msgEventer {
+func newMsgEventer(rw MsgReadWriter, feed *event.Feed, peerID node.NodeID, proto string) *msgEventer {
 	return &msgEventer{
 		MsgReadWriter: rw,
 		feed:          feed,

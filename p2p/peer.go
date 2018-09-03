@@ -11,6 +11,7 @@ import (
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/common/util/mclock"
+	"github.com/linkchain/p2p/node"
 )
 
 const (
@@ -39,7 +40,7 @@ type protoHandshake struct {
 	Name       string
 	Caps       []Cap
 	ListenPort uint64
-	ID         NodeID
+	ID         node.NodeID
 
 	// Ignore additional fields (for forward compatibility).
 	Rest []byte
@@ -70,7 +71,7 @@ const (
 // a p2p.Server or when a message is sent or received on a peer connection
 type PeerEvent struct {
 	Type     PeerEventType `json:"type"`
-	Peer     NodeID        `json:"peer"`
+	Peer     node.NodeID   `json:"peer"`
 	Error    string        `json:"error,omitempty"`
 	Protocol string        `json:"protocol,omitempty"`
 	MsgCode  *uint64       `json:"msg_code,omitempty"`
@@ -94,7 +95,7 @@ type Peer struct {
 }
 
 // NewPeer returns a peer for testing purposes.
-func NewPeer(id NodeID, name string, caps []Cap) *Peer {
+func NewPeer(id node.NodeID, name string, caps []Cap) *Peer {
 	pipe, _ := net.Pipe()
 	conn := &conn{fd: pipe, transport: nil, id: id, caps: caps, name: name}
 	peer := newPeer(conn, nil)
@@ -103,7 +104,7 @@ func NewPeer(id NodeID, name string, caps []Cap) *Peer {
 }
 
 // ID returns the node's public key.
-func (p *Peer) ID() NodeID {
+func (p *Peer) ID() node.NodeID {
 	return p.rw.id
 }
 
