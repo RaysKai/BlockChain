@@ -11,7 +11,7 @@ type IBlockID interface{
 
 type IBlock interface {
 	//block content
-	SetTx([]tx.ITransaction)(error)
+	SetTx([]tx.ITx)(error)
 
 	GetHeight() int
 

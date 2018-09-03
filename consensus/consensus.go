@@ -19,7 +19,7 @@ type Service struct{
 type ConsensusService interface {
 	common.IService
 	ProcessBlock(block block.IBlock)
-	ProcessTx(tx tx.ITransaction)
+	ProcessTx(tx tx.ITx)
 }
 
 func (s *Service) Init(i interface{}) bool{
@@ -45,7 +45,7 @@ func (s *Service) ProcessBlock(block block.IBlock){
 	service.ProcessBlock(block)
 }
 
-func (s *Service) ProcessTx(tx tx.ITransaction){
+func (s *Service) ProcessTx(tx tx.ITx){
 	log.Info("ProcessTx ...");
 	service.ProcessTx(tx)
 }

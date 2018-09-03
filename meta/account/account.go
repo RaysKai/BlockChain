@@ -8,6 +8,7 @@ import (
 type IAccountID interface{
 	GetString() string
 }
+
 type IAccount interface {
 	//acount management
 	ChangeAmount(meta.IAmount) meta.IAmount
