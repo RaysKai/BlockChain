@@ -224,7 +224,7 @@ func (p *MsgPipeRW) Close() error {
 // ExpectMsg reads a message from r and verifies that its
 // code and encoded RLP content match the provided values.
 // If content is nil, the payload is discarded and not verified.
-func ExpectMsg(r MsgReader, code uint64, content interface{}) error {
+func ExpectMsg(r MsgReader, code uint64, content proto.Message) error {
 	msg, err := r.ReadMsg()
 	if err != nil {
 		return err
@@ -235,20 +235,21 @@ func ExpectMsg(r MsgReader, code uint64, content interface{}) error {
 	if content == nil {
 		return msg.Discard()
 	} else {
-		//		contentEnc, err := rlp.EncodeToBytes(content)
-		//		if err != nil {
-		//			panic("content encode error: " + err.Error())
-		//		}
-		//		if int(msg.Size) != len(contentEnc) {
-		//			return fmt.Errorf("message size mismatch: got %d, want %d", msg.Size, len(contentEnc))
-		//		}
-		//		actualContent, err := ioutil.ReadAll(msg.Payload)
-		//		if err != nil {
-		//			return err
-		//		}
-		//		if !bytes.Equal(actualContent, contentEnc) {
-		//			return fmt.Errorf("message payload mismatch:\ngot:  %x\nwant: %x", actualContent, contentEnc)
-		//		}
+
+		contentEnc, err := proto.Marshal(content)
+		if err != nil {
+			panic("content encode error: " + err.Error())
+		}
+		if int(msg.Size) != len(contentEnc) {
+			return fmt.Errorf("message size mismatch: got %d, want %d", msg.Size, len(contentEnc))
+		}
+		actualContent, err := ioutil.ReadAll(msg.Payload)
+		if err != nil {
+			return err
+		}
+		if !bytes.Equal(actualContent, contentEnc) {
+			return fmt.Errorf("message payload mismatch:\ngot:  %x\nwant: %x", actualContent, contentEnc)
+		}
 	}
 	return nil
 }
