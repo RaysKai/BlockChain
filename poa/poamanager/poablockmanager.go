@@ -8,30 +8,41 @@ import (
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/common/math"
 	poameta "github.com/linkchain/poa/meta"
+	"sync"
 )
 
-var mapBlockIndexByHash map[math.Hash]uint32
-var mapBlockIndexByHeight map[uint32][]uint32
-//var blockIndexs []poameta.BlockIndex
-var sideChain [][]uint32
+const (
+	MaxMapSize = 1024 * 4
+)
 
 type POABlockManager struct {
-
+	sync.RWMutex
+	mapBlockIndexByHash map[math.Hash]poameta.POABlock
 }
+
+func (m *POABlockManager) readMap(key math.Hash) (poameta.POABlock,bool) {
+	m.RLock()
+	value, ok := m.mapBlockIndexByHash[key]
+	m.RUnlock()
+	return value, ok
+}
+
+func (m *POABlockManager) writeMap(key math.Hash, value poameta.POABlock) {
+	m.Lock()
+	m.mapBlockIndexByHash[key] = value
+	m.Unlock()
+}
+
 
 /** interface: common.IService **/
 func (m *POABlockManager) Init(i interface{}) bool{
 	log.Info("POABlockManager init...");
-	mapBlockIndexByHash = make(map[math.Hash]uint32)
-	//blockIndexs = make([]poameta.BlockIndex,0)
-	mapBlockIndexByHeight = make(map[uint32][]uint32)
-	sideChain = make([][]uint32,0,3)
-	noParent := make([]uint32,0)//no-parent blocks | statusId 0x00000000
-	mainChain := make([]uint32,0)//mainchain blocks | statusId 0x00000001
-	fristSideChain := make([]uint32,0)//side(1) blocks | statusId 0x00000010
-	sideChain = append(sideChain,noParent)
-	sideChain = append(sideChain,mainChain)
-	sideChain = append(sideChain,fristSideChain)
+	m.mapBlockIndexByHash = make(map[math.Hash]poameta.POABlock)
+	//load gensis block
+	gensisBlock := GetManager().BlockManager.GetGensisBlock()
+	m.AddBlock(gensisBlock)
+	//load block by chainmanager
+
 	return true
 }
 
@@ -66,58 +77,40 @@ func (m *POABlockManager) GetGensisBlock() block.IBlock{
 
 /** interface: BlockPoolManager **/
 func (m *POABlockManager) GetBlockByID(hash block.IBlockID) (block.IBlock,error) {
-	/*index, ok := mapBlockIndexByHash[(*hash.(*math.Hash))]
+	index, ok := m.readMap(hash.(math.Hash))
 	if ok {
-		return nil,nil
-	}*/
+		return &index,nil
+	}
+
+	//TODO need to storage
 	return nil, errors.New("POABlockManager can not find block by hash:" + hash.GetString())
 }
 
 func (m *POABlockManager) GetBlockByHeight(height uint32) ([]block.IBlock,error) {
-	/*index, ok := mapBlockIndexByHeight[height]
-	if ok {
-		var blocks []block.IBlock
-		blocks = make([]block.IBlock,0)
-		for i :=range index {
-			blocks = append(blocks,&blockIndexs[i].Block)
-		}
-		if len(blocks) < 0 {
-			return nil, errors.New("POABlockManager can not find block by height:" + string(height))
-		}
-		return blocks,nil
-	}*/
-	return nil, errors.New("POABlockManager can not find block by height:" + string(height))
+	//TODO may not be need
+	return nil,nil
 }
 
 
 func (m *POABlockManager) AddBlock(block block.IBlock) error{
-	/*index := len(blockIndexs)
-	status := poameta.StateLess
-	//update maphash
-	mapBlockIndexByHash[(*block.GetBlockID().(*math.Hash))] = uint32(index)
-	//update mapheight
-	mapBlockIndexByHeight[block.GetHeight()] = append(mapBlockIndexByHeight[block.GetHeight()],uint32(index))
-	//update sidechain
-	for _,index := range mapBlockIndexByHeight[(block.GetHeight()-1)] {
-		if blockIndexs[index].Blockhash.IsEqual(block.GetPrevBlockID().(*math.Hash)) {
-			status = blockIndexs[index].Status
-			sideChain[blockIndexs[index].Status] = append(sideChain[blockIndexs[index].Status],index)
-		}
-	}
-	if status == poameta.StateLess {
-
-	}
-	blockIndex := poameta.NewBlockIndex(*block.(*poameta.POABlock),status)
-	blockIndexs = append(blockIndexs,blockIndex)*/
+	hash := block.GetBlockID().(math.Hash)
+	m.writeMap(hash,*(block.(*poameta.POABlock)))
 	return nil
 }
 
-func (m *POABlockManager) AddBlocks(block []block.IBlock) error{
+func (m *POABlockManager) AddBlocks(blocks []block.IBlock) error{
+	for _,block := range blocks {
+		m.AddBlock(block)
+	}
 	return nil
 }
 
 
 func (m *POABlockManager) RemoveBlock(hash block.IBlockID) error{
+	//TODO need to lock
+	m.Lock()
+	delete(m.mapBlockIndexByHash,*(hash.(*math.Hash)))
+	m.Unlock()
 	return nil
 }
 
