@@ -21,7 +21,7 @@ func (m *POATxManager) CheckTx(tx tx.ITx) bool {
 func (m *POATxManager) ProcessTx(tx tx.ITx){
 	log.Info("poa ProcessTx ...")
 	//1.checkTx
-	if !GetInstance().TransactionMgr.CheckTx(tx) {
+	if !GetManager().TransactionMgr.CheckTx(tx) {
 		log.Error("poa checkTransaction failed")
 		return
 	}

@@ -15,7 +15,7 @@ type IChain interface {
 	//get blockchain info
 	GetLastBlock() block.IBlock
 
-	GetHeight()int
+	GetHeight() uint32
 
 	GetBlockByID(block.IBlockID) block.IBlock
 

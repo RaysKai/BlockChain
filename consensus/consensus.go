@@ -1,11 +1,8 @@
 package consensus
 
 import (
-	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/common"
 	"github.com/linkchain/poa"
-	"github.com/linkchain/meta/block"
-	"github.com/linkchain/meta/tx"
+	"github.com/linkchain/consensus/manager"
 )
 
 var (
@@ -16,11 +13,6 @@ type Service struct{
 
 }
 
-type ConsensusService interface {
-	common.IService
-	ProcessBlock(block block.IBlock)
-	ProcessTx(tx tx.ITx)
-}
 
 func (s *Service) Init(i interface{}) bool{
 	//log.Info("consensus service init...");
@@ -40,13 +32,18 @@ func (s *Service) Stop(){
 	service.Stop()
 }
 
-func (s *Service) ProcessBlock(block block.IBlock){
-	log.Info("ProcessBlock ...");
-	service.ProcessBlock(block)
+func (s *Service) GetBlockManager() manager.BlockManager {
+	return service.GetManager().BlockMgr
 }
 
-func (s *Service) ProcessTx(tx tx.ITx){
-	log.Info("ProcessTx ...");
-	service.ProcessTx(tx)
+func (s *Service) GetTXManager() manager.TransactionManager {
+	return service.GetManager().TransactionMgr
 }
 
+func (s *Service) GetAccountManager() manager.AccountManager {
+	return service.GetManager().AccountMgr
+}
+
+func (s *Service) GetChainManager() manager.ChainManager {
+	return service.GetManager().ChainMgr
+}

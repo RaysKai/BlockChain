@@ -1,14 +1,11 @@
 package node
 
 import (
-	"time"
 
 	"github.com/linkchain/common"
 	"github.com/linkchain/p2p"
 	"github.com/linkchain/consensus"
 	"github.com/linkchain/common/util/log"
-	"github.com/linkchain/common/math"
-	poameta "github.com/linkchain/poa/meta"
 )
 
 
@@ -37,11 +34,7 @@ func Run(){
 	for _,v := range svcList{
 		v.Start()
 	}
-	txs := []poameta.POATransaction{}
-	block := &poameta.POABlock{
-		Header:poameta.POABlockHeader{Version:0, PrevBlock:math.Hash{},MerkleRoot:math.Hash{},Timestamp:time.Unix(1401292357, 0),Difficulty:0x207fffff,Nonce:0,Extra:nil},
-		TXs:txs,
-	}
-	//log.Info(block.ToString())
-	svcList[1].(consensus.ConsensusService).ProcessBlock(block)
+
+	block :=svcList[1].(*consensus.Service).GetBlockManager().NewBlock()
+	svcList[1].(*consensus.Service).GetBlockManager().ProcessBlock(block)
 }

@@ -38,6 +38,9 @@ type POABlockHeader struct {
 	// Nonce used to generate the block.
 	Nonce uint32
 
+	//the height of block
+	Height uint32
+
 	// Extra used to extenion the block.
 	Extra []byte
 }
@@ -52,8 +55,8 @@ func (b *POABlock)SetTx([]tx.ITx)(error){
 	return nil
 }
 
-func (b *POABlock)GetHeight() int{
-	return 0
+func (b *POABlock)GetHeight() uint32{
+	return b.Header.Height
 }
 
 func (b *POABlock)GetBlockID() block.IBlockID{
@@ -63,6 +66,10 @@ func (b *POABlock)GetBlockID() block.IBlockID{
 
 	first := sha256.Sum256(buf.Bytes())
 	return math.Hash(sha256.Sum256(first[:]))
+}
+
+func (b *POABlock)GetPrevBlockID() block.IBlockID{
+	return b.Header.PrevBlock
 }
 
 func (b *POABlock)Verify()(error){
@@ -83,4 +90,15 @@ func (b *POABlock)ToString()(string){
 		return err.Error()
 	}
 	return string(data)
+}
+
+
+
+func (bh *POABlockHeader)GetBlockID() block.IBlockID{
+	data := make([]byte, 0)
+	buf := bytes.NewBuffer(data)
+	binary.Write(buf, binary.BigEndian, bh.Version)
+
+	first := sha256.Sum256(buf.Bytes())
+	return math.Hash(sha256.Sum256(first[:]))
 }

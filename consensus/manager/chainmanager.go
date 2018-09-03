@@ -11,7 +11,6 @@ type ChainReader interface{
 
 	GetBestBlock() block.IBlock
 
-	GetMainChain() block.IBlock
 
 	GetBlockByHash(h math.Hash) block.IBlock
 
