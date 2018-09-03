@@ -1,12 +1,9 @@
 package p2p
 
 import (
-	"github.com/linkchain/common/util/log"
+	_ "github.com/linkchain/common/util/log"
 	"net"
 )
-
-type Service struct {
-}
 
 type connFlag int
 
@@ -72,22 +69,4 @@ func (f connFlag) String() string {
 
 func (c *conn) is(f connFlag) bool {
 	return c.flags&f != 0
-}
-
-func (s *Service) Init(i interface{}) bool {
-	log.Info("p2p service init...")
-	return true
-}
-
-func (s *Service) Start() bool {
-	log.Info("p2p service start...")
-	return true
-}
-
-func (s *Service) Stop() {
-	log.Info("p2p service stop...")
-}
-
-func (s *Service) Foo() {
-	log.Info("FOOO")
 }

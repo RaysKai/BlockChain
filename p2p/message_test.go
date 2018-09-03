@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"github.com/golang/protobuf/proto"
+	"github.com/linkchain/p2p/proto/example"
 	"io"
 	"runtime"
 	"strings"
@@ -14,8 +16,16 @@ import (
 func ExampleMsgPipe() {
 	rw1, rw2 := MsgPipe()
 	go func() {
-		Send(rw1, 8, [][]byte{{0, 0}})
-		Send(rw1, 5, [][]byte{{1, 1}})
+		Send(rw1, 8, &example.Test{
+			Label: proto.String("hello"),
+			Type:  proto.Int32(17),
+			Reps:  []int64{1, 2, 3},
+		})
+		Send(rw1, 5, &example.Test{
+			Label: proto.String("hi"),
+			Type:  proto.Int32(16),
+			Reps:  []int64{3, 1, 2},
+		})
 		rw1.Close()
 	}()
 
@@ -24,9 +34,9 @@ func ExampleMsgPipe() {
 		if err != nil {
 			break
 		}
-		var data [][]byte
+		data := example.Test{}
 		msg.Decode(&data)
-		fmt.Printf("msg: %d, %x\n", msg.Code, data[0])
+		fmt.Printf("msg: %d, %x\n", msg.Code, data)
 	}
 	// Output:
 	// msg: 8, 0000
@@ -39,7 +49,7 @@ loop:
 		rw1, rw2 := MsgPipe()
 		done := make(chan struct{})
 		go func() {
-			if err := SendItems(rw1, 1); err == nil {
+			if err := SendItems(rw1, 1, nil); err == nil {
 				t.Error("EncodeMsg returned nil error")
 			} else if err != ErrPipeClosed {
 				t.Errorf("EncodeMsg returned wrong error: got %v, want %v", err, ErrPipeClosed)

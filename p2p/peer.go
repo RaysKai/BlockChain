@@ -42,7 +42,7 @@ type protoHandshake struct {
 	ID         NodeID
 
 	// Ignore additional fields (for forward compatibility).
-	// Rest []rlp.RawValue `rlp:"tail"`
+	Rest []byte
 }
 
 // PeerEventType is the type of peer events emitted by a p2p.Server
