@@ -48,7 +48,7 @@ func New()(block.IBlock, error){
 	return block, nil
 }
 
-func (b *POABlock)SetTx([]tx.ITransaction)(error){
+func (b *POABlock)SetTx([]tx.ITx)(error){
 	return nil
 }
 

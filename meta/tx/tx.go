@@ -10,7 +10,11 @@ type ITxPeer interface{
 
 }
 
-type ITransaction interface {
+type ITxID interface{
+	GetString() string
+}
+
+type ITx interface {
 	//tx content
 	SetFrom(from ITxPeer)
 	SetTo(to ITxPeer)

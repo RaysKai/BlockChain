@@ -42,7 +42,7 @@ func (s *Service) ProcessBlock(block block.IBlock){
 	//3.updateStorage
 }
 
-func (s *Service) ProcessTx(tx tx.ITransaction){
+func (s *Service) ProcessTx(tx tx.ITx){
 	log.Info("poa ProcessTx ...")
 	//1.checkTx
 	if !poamanager.GetInstance().TransactionMgr.CheckTx(tx) {

@@ -4,7 +4,7 @@ import (
 	"github.com/linkchain/meta/block"
 )
 
-type IBlockChain interface {
+type IChain interface {
 	//maintain blockchain
 	AddNewBlock(block.IBlock)
 
@@ -20,4 +20,8 @@ type IBlockChain interface {
 	GetBlockByID(block.IBlockID) block.IBlock
 
 	GetBlockByHeight(int) block.IBlock
+}
+
+type IChainGraph interface{
+
 }

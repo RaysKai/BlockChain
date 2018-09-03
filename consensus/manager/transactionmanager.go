@@ -7,19 +7,19 @@ import (
 
 type TransactionManager interface{
 	TransactionValidator
-	NewTransaction() tx.ITransaction
-	SignTransaction(tx tx.ITransaction) error
-	ProcessTx(tx tx.ITransaction)
+	NewTransaction() tx.ITx
+	SignTransaction(tx tx.ITx) error
+	ProcessTx(tx tx.ITx)
 }
 
 type TransactionPoolManager interface{
-	AddTransaction(tx tx.ITransaction) error
-	GetTransaction(txid hash.Hash) (tx.ITransaction,error)
+	AddTransaction(tx tx.ITx) error
+	GetTransaction(txid hash.Hash) (tx.ITx,error)
 	removeTransaction(txid hash.Hash) error
 
 }
 
 type TransactionValidator  interface {
-	CheckTx(tx tx.ITransaction) bool
+	CheckTx(tx tx.ITx) bool
 }
 
