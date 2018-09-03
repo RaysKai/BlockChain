@@ -124,21 +124,21 @@ func (m *POABlockManager) RemoveBlock(hash block.IBlockID) error{
 /** interface: BlockValidator **/
 func (m *POABlockManager) CheckBlock(block block.IBlock) bool {
 	log.Info("POA CheckBlock ...")
-	GetManager().ChainMgr.AddBlock(block)
+	GetManager().ChainManager.AddBlock(block)
 	log.Info("POA Add a Block","block",block)
-	log.Info("POA GetBestHeader","blockhash", GetManager().ChainMgr.GetBestBlock().GetBlockID().GetString())
+	log.Info("POA GetBestHeader","blockhash", GetManager().ChainManager.GetBestBlock().GetBlockID().GetString())
 	return true
 }
 
 func (s *POABlockManager) ProcessBlock(block block.IBlock){
 	log.Info("POA ProcessBlock ...")
 	//1.checkBlock
-	if !GetManager().BlockMgr.CheckBlock(block) {
+	if !GetManager().BlockManager.CheckBlock(block) {
 		log.Error("POA checkBlock failed")
 		return
 	}
 	//2.updateChain
-	if GetManager().ChainMgr.UpdateChain() {
+	if GetManager().ChainManager.UpdateChain() {
 		log.Info("Update chain successed")
 	}
 	//3.updateStorage

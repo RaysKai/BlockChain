@@ -33,17 +33,17 @@ func (s *Service) Stop(){
 }
 
 func (s *Service) GetBlockManager() manager.BlockManager {
-	return service.GetManager().BlockMgr
+	return service.GetManager().BlockManager
 }
 
 func (s *Service) GetTXManager() manager.TransactionManager {
-	return service.GetManager().TransactionMgr
+	return service.GetManager().TransactionManager
 }
 
 func (s *Service) GetAccountManager() manager.AccountManager {
-	return service.GetManager().AccountMgr
+	return service.GetManager().AccountManager
 }
 
 func (s *Service) GetChainManager() manager.ChainManager {
-	return service.GetManager().ChainMgr
+	return service.GetManager().ChainManager
 }
