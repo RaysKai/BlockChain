@@ -12,36 +12,36 @@ var once sync.Once
 
 func GetManager() *POAManager {
 	once.Do(func() {
-		m = &POAManager {BlockMgr:&POABlockManager{},
-			AccountMgr:&POAAccountManager{},
-			TransactionMgr:&POATxManager{},
-			ChainMgr:&POAChainManager{}}
+		m = &POAManager {BlockManager:&POABlockManager{},
+			AccountManager:&POAAccountManager{},
+			TransactionManager:&POATxManager{},
+			ChainManager:&POAChainManager{}}
 	})
 	return m
 }
 
 type POAManager struct {
-	BlockMgr manager.BlockManager
-	AccountMgr manager.AccountManager
-	TransactionMgr manager.TransactionManager
-	ChainMgr manager.ChainManager
+	BlockManager manager.BlockManager
+	AccountManager manager.AccountManager
+	TransactionManager manager.TransactionManager
+	ChainManager manager.ChainManager
 }
 
 func (m *POAManager) Init(i interface{}) bool{
 	log.Info("POAManager init...");
-	m.ChainMgr.Init(i)
-	m.BlockMgr.Init(i)
+	m.ChainManager.Init(i)
+	m.BlockManager.Init(i)
 	return true
 }
 
 func (m *POAManager) Start() bool{
 	log.Info("POAManager start...");
-	m.ChainMgr.Start()
+	m.ChainManager.Start()
 	return true
 }
 
 func (m *POAManager) Stop(){
 	log.Info("POAManager stop...");
-	m.ChainMgr.Stop()
+	m.ChainManager.Stop()
 }
 

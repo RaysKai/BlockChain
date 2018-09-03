@@ -2,9 +2,9 @@ package poamanager
 
 import (
 	"github.com/linkchain/common/util/log"
-	poameta "github.com/linkchain/poa/meta"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/meta/block"
+	poameta "github.com/linkchain/poa/meta"
 )
 
 type POAChainManager struct {
@@ -15,7 +15,7 @@ func (m *POAChainManager) Init(i interface{}) bool{
 	log.Info("POAChainManager init...");
 	m.chains = make([]poameta.POAChain,0)
 	//create gensis chain
-	gensisChain := poameta.NewPOAChain(GetManager().BlockMgr.GetGensisBlock(),GetManager().BlockMgr.GetGensisBlock())
+	gensisChain := poameta.NewPOAChain(GetManager().BlockManager.GetGensisBlock(),GetManager().BlockManager.GetGensisBlock())
 	m.chains = append(m.chains,gensisChain)
 	//todo need to load storage
 
