@@ -7,21 +7,24 @@ import (
 
 type BlockManager interface {
 	common.IService
-	//todo BlockPoolManager
+	BlockBaseManager
+	BlockPoolManager
 	BlockValidator
-	//todo NewBlock() block.IBlock
 
 	ProcessBlock(block block.IBlock)
 }
 
+type BlockBaseManager interface {
+	NewBlock() block.IBlock
+	GetGensisBlock() block.IBlock
+}
 /**
 	BlockPoolManager
 	manager block pool.the block at pool is side chain block or no-parent block
  */
 type BlockPoolManager interface{
 	GetBlockByID(hash block.IBlockID) (block.IBlock,error)
-	GetBlockByHeight(height uint32) (block.IBlock,error)
-	FindLongestChain() (uint32,uint32,error)/**return the start height of the longest side chain,the end height of the longest side chain,error**/
+	GetBlockByHeight(height uint32) ([]block.IBlock,error)
 	AddBlock(block block.IBlock) error
 	AddBlocks(block []block.IBlock) error
 	RemoveBlock(hash block.IBlockID) error

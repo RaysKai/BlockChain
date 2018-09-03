@@ -10,7 +10,7 @@ import (
 var m *POAManager
 var once sync.Once
 
-func GetInstance() *POAManager {
+func GetManager() *POAManager {
 	once.Do(func() {
 		m = &POAManager {BlockMgr:&POABlockManager{},
 			AccountMgr:&POAAccountManager{},
@@ -30,6 +30,7 @@ type POAManager struct {
 func (m *POAManager) Init(i interface{}) bool{
 	log.Info("POAManager init...");
 	m.ChainMgr.Init(i)
+	m.BlockMgr.Init(i)
 	return true
 }
 

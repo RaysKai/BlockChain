@@ -13,10 +13,11 @@ type IBlock interface {
 	//block content
 	SetTx([]tx.ITx)(error)
 
-	GetHeight() int
+	GetHeight() uint32
 
 	GetBlockID() IBlockID
 
+	GetPrevBlockID() IBlockID
 	//verifiy
 	Verify()(error)
 
