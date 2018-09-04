@@ -3,7 +3,7 @@ package manager
 import "github.com/linkchain/meta/account"
 
 type AccountManager interface{
-	//todo AccountPoolManager
+	//TODO AccountPoolManager
 
 	NewAccount() account.IAccount
 }

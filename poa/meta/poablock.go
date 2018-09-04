@@ -11,6 +11,7 @@ import (
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/meta/block"
+	"reflect"
 )
 
 type POABlock struct{
@@ -49,6 +50,10 @@ type POABlockHeader struct {
 func New()(block.IBlock, error){
 	block := &POABlock{}
 	return block, nil
+}
+
+func TypeConvert(i interface{}) interface{}  {
+	return reflect.ValueOf(i)
 }
 
 func (b *POABlock)SetTx([]tx.ITx)(error){
