@@ -5,6 +5,7 @@ import (
 	"net"
 	"sync"
 
+	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/p2p/netutil"
 	"github.com/linkchain/p2p/node"
@@ -79,29 +80,106 @@ type Service struct {
 	ourHandshake *protoHandshake
 	listener     net.Listener
 
+	// These are for Peers, PeerCount (and nothing else).
+	peerOp     chan peerOpFunc
+	peerOpDone chan struct{}
+
 	newTransport  func(net.Conn) transport
 	quit          chan struct{}
+	addstatic     chan *node.Node
+	removestatic  chan *node.Node
 	posthandshake chan *conn
 	addpeer       chan *conn
+	delpeer       chan peerDrop
+	loopWG        sync.WaitGroup // loop, listenLoop
+	peerFeed      event.Feed
 	log           log.Logger
 }
 
-func (s *Service) Init(i interface{}) bool {
+type peerOpFunc func(map[node.NodeID]*Peer)
+
+type peerDrop struct {
+	*Peer
+	err       error
+	requested bool // true if signaled by the peer
+}
+
+func (srv *Service) Init(i interface{}) bool {
 	log.Info("p2p service init...")
 	return true
 }
 
-func (s *Service) Start() bool {
+func (srv *Service) Start() bool {
 	log.Info("p2p service start...")
 	return true
 }
 
-func (s *Service) Stop() {
+func (srv *Service) Stop() {
 	log.Info("p2p service stop...")
+	srv.lock.Lock()
+	defer srv.lock.Unlock()
+	if !srv.running {
+		return
+	}
+	srv.running = false
+	if srv.listener != nil {
+		// this unblocks listener Accept
+		srv.listener.Close()
+	}
+	close(srv.quit)
+	srv.loopWG.Wait()
 }
 
-func (s *Service) Foo() {
-	log.Info("FOOO")
+// Peers returns all connected peers.
+func (srv *Service) Peers() []*Peer {
+	var ps []*Peer
+	select {
+	// Note: We'd love to put this function into a variable but
+	// that seems to cause a weird compiler error in some
+	// environments.
+	case srv.peerOp <- func(peers map[node.NodeID]*Peer) {
+		for _, p := range peers {
+			ps = append(ps, p)
+		}
+	}:
+		<-srv.peerOpDone
+	case <-srv.quit:
+	}
+	return ps
+}
+
+// PeerCount returns the number of connected peers.
+func (srv *Service) PeerCount() int {
+	var count int
+	select {
+	case srv.peerOp <- func(ps map[node.NodeID]*Peer) { count = len(ps) }:
+		<-srv.peerOpDone
+	case <-srv.quit:
+	}
+	return count
+}
+
+// AddPeer connects to the given node and maintains the connection until the
+// server is shut down. If the connection fails for any reason, the server will
+// attempt to reconnect the peer.
+func (srv *Service) AddPeer(node *node.Node) {
+	select {
+	case srv.addstatic <- node:
+	case <-srv.quit:
+	}
+}
+
+// RemovePeer disconnects from the given node
+func (srv *Service) RemovePeer(node *node.Node) {
+	select {
+	case srv.removestatic <- node:
+	case <-srv.quit:
+	}
+}
+
+// SubscribePeers subscribes the given channel to peer events
+func (srv *Service) SubscribeEvents(ch chan *PeerEvent) event.Subscription {
+	return srv.peerFeed.Subscribe(ch)
 }
 
 // Self returns the local node's endpoint information.
