@@ -1,4 +1,4 @@
-package peer
+package message
 
 import (
 	"bytes"
@@ -249,7 +249,7 @@ type msgEventer struct {
 
 // newMsgEventer returns a msgEventer which sends message events to the given
 // feed
-func newMsgEventer(rw MsgReadWriter, feed *event.Feed, peerID node.NodeID, proto string) *msgEventer {
+func NewMsgEventer(rw MsgReadWriter, feed *event.Feed, peerID node.NodeID, proto string) *msgEventer {
 	return &msgEventer{
 		MsgReadWriter: rw,
 		feed:          feed,
@@ -265,8 +265,8 @@ func (self *msgEventer) ReadMsg() (Msg, error) {
 	if err != nil {
 		return msg, err
 	}
-	self.feed.Send(&PeerEvent{
-		Type:     PeerEventTypeMsgRecv,
+	self.feed.Send(&peer_error.PeerEvent{
+		Type:     peer_error.PeerEventTypeMsgRecv,
 		Peer:     self.peerID,
 		Protocol: self.Protocol,
 		MsgCode:  &msg.Code,
@@ -282,8 +282,8 @@ func (self *msgEventer) WriteMsg(msg Msg) error {
 	if err != nil {
 		return err
 	}
-	self.feed.Send(&PeerEvent{
-		Type:     PeerEventTypeMsgSend,
+	self.feed.Send(&peer_error.PeerEvent{
+		Type:     peer_error.PeerEventTypeMsgSend,
 		Peer:     self.peerID,
 		Protocol: self.Protocol,
 		MsgCode:  &msg.Code,
@@ -299,4 +299,30 @@ func (self *msgEventer) Close() error {
 		return v.Close()
 	}
 	return nil
+}
+
+// protoHandshake is the RLP structure of the protocol handshake.
+type ProtoHandshake struct {
+	Version    uint64
+	Name       string
+	Caps       []Cap
+	ListenPort uint64
+	ID         node.NodeID
+
+	// Ignore additional fields (for foRWard compatibility).
+	Rest []byte
+}
+
+// Cap is the structure of a peer capability.
+type Cap struct {
+	Name    string
+	Version uint
+}
+
+func (cap Cap) RlpData() interface{} {
+	return []interface{}{cap.Name, cap.Version}
+}
+
+func (cap Cap) String() string {
+	return fmt.Sprintf("%s/%d", cap.Name, cap.Version)
 }

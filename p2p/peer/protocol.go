@@ -1,8 +1,9 @@
 package peer
 
 import (
-	"fmt"
+	_ "fmt"
 
+	"github.com/linkchain/p2p/message"
 	"github.com/linkchain/p2p/node"
 )
 
@@ -26,7 +27,7 @@ type Protocol struct {
 	// The peer connection is closed when Start returns. It should return
 	// any protocol-level error (such as an I/O error) that is
 	// encountered.
-	Run func(peer *Peer, rw MsgReadWriter) error
+	Run func(peer *Peer, rw message.MsgReadWriter) error
 
 	// NodeInfo is an optional helper method to retrieve protocol specific metadata
 	// about the host node.
@@ -38,20 +39,6 @@ type Protocol struct {
 	PeerInfo func(id node.NodeID) interface{}
 }
 
-func (p Protocol) Cap() Cap {
-	return Cap{p.Name, p.Version}
-}
-
-// Cap is the structure of a peer capability.
-type Cap struct {
-	Name    string
-	Version uint
-}
-
-func (cap Cap) RlpData() interface{} {
-	return []interface{}{cap.Name, cap.Version}
-}
-
-func (cap Cap) String() string {
-	return fmt.Sprintf("%s/%d", cap.Name, cap.Version)
+func (p Protocol) Cap() message.Cap {
+	return message.Cap{p.Name, p.Version}
 }

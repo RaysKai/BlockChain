@@ -35,7 +35,8 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/linkchain/p2p/msg"
+	"github.com/linkchain/p2p/message"
+	"github.com/linkchain/p2p/message/protobufmsg"
 	"github.com/linkchain/p2p/peer"
 	"github.com/linkchain/p2p/peer_error"
 )
@@ -172,14 +173,14 @@ func (s *Spec) NewMsg(code uint64) (proto.Message, bool) {
 	if !ok {
 		return nil, false
 	}
-	return new(msg.Msg), true
+	return new(protobufmsg.Msg), true
 }
 
 // Peer represents a remote peer or protocol instance that is running on a peer connection with
 // a remote peer
 type Peer struct {
-	*peer.Peer                    // the p2p.Peer object representing the remote
-	rw         peer.MsgReadWriter // p2p.MsgReadWriter to send messages to and read messages from
+	*peer.Peer                       // the p2p.Peer object representing the remote
+	rw         message.MsgReadWriter // p2p.MsgReadWriter to send messages to and read messages from
 	spec       *Spec
 }
 
@@ -187,7 +188,7 @@ type Peer struct {
 // this constructor is called by the p2p.Protocol#Run function
 // the first two arguments are the arguments passed to p2p.Protocol.Run function
 // the third argument is the Spec describing the protocol
-func NewPeer(p *peer.Peer, rw peer.MsgReadWriter, spec *Spec) *Peer {
+func NewPeer(p *peer.Peer, rw message.MsgReadWriter, spec *Spec) *Peer {
 	return &Peer{
 		Peer: p,
 		rw:   rw,
@@ -224,7 +225,7 @@ func (p *Peer) Send(msg proto.Message) error {
 	if !found {
 		return errorf(ErrInvalidMsgType, "%v", code)
 	}
-	return peer.Send(p.rw, code, msg)
+	return message.Send(p.rw, code, msg)
 }
 
 // handleIncoming(code)

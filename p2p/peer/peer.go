@@ -11,6 +11,7 @@ import (
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/common/util/mclock"
+	"github.com/linkchain/p2p/message"
 	"github.com/linkchain/p2p/node"
 	"github.com/linkchain/p2p/peer_error"
 )
@@ -35,56 +36,12 @@ const (
 	peersMsg     = 0x05
 )
 
-type capsByNameAndVersion []Cap
+type capsByNameAndVersion []message.Cap
 
 func (cs capsByNameAndVersion) Len() int      { return len(cs) }
 func (cs capsByNameAndVersion) Swap(i, j int) { cs[i], cs[j] = cs[j], cs[i] }
 func (cs capsByNameAndVersion) Less(i, j int) bool {
 	return cs[i].Name < cs[j].Name || (cs[i].Name == cs[j].Name && cs[i].Version < cs[j].Version)
-}
-
-// protoHandshake is the RLP structure of the protocol handshake.
-type ProtoHandshake struct {
-	Version    uint64
-	Name       string
-	Caps       []Cap
-	ListenPort uint64
-	ID         node.NodeID
-
-	// Ignore additional fields (for foRWard compatibility).
-	Rest []byte
-}
-
-// PeerEventType is the type of peer events emitted by a p2p.Server
-type PeerEventType string
-
-const (
-	// PeerEventTypeAdd is the type of event emitted when a peer is added
-	// to a p2p.Server
-	PeerEventTypeAdd PeerEventType = "add"
-
-	// PeerEventTypeDrop is the type of event emitted when a peer is
-	// dropped from a p2p.Server
-	PeerEventTypeDrop PeerEventType = "drop"
-
-	// PeerEventTypeMsgSend is the type of event emitted when a
-	// message is successfully sent to a peer
-	PeerEventTypeMsgSend PeerEventType = "msgsend"
-
-	// PeerEventTypeMsgRecv is the type of event emitted when a
-	// message is received from a peer
-	PeerEventTypeMsgRecv PeerEventType = "msgrecv"
-)
-
-// PeerEvent is an event emitted when peers are either added or dropped from
-// a p2p.Server or when a message is sent or received on a peer connection
-type PeerEvent struct {
-	Type     PeerEventType `json:"type"`
-	Peer     node.NodeID   `json:"peer"`
-	Error    string        `json:"error,omitempty"`
-	Protocol string        `json:"protocol,omitempty"`
-	MsgCode  *uint64       `json:"msg_code,omitempty"`
-	MsgSize  *uint32       `json:"msg_size,omitempty"`
 }
 
 // Peer represents a connected remote node.
@@ -104,7 +61,7 @@ type Peer struct {
 }
 
 // NewPeer returns a peer for testing purposes.
-func NewTestPeer(id node.NodeID, name string, caps []Cap) *Peer {
+func NewTestPeer(id node.NodeID, name string, caps []message.Cap) *Peer {
 	pipe, _ := net.Pipe()
 	conn := &Conn{FD: pipe, Transport: nil, ID: id, Caps: caps, Name: name}
 	peer := NewPeer(conn, nil)
@@ -135,7 +92,7 @@ func (p *Peer) Name() string {
 }
 
 // Caps returns the capabilities (supported subprotocols) of the remote peer.
-func (p *Peer) Caps() []Cap {
+func (p *Peer) Caps() []message.Cap {
 	// TODO: maybe return copy
 	return p.RW.Caps
 }
@@ -243,7 +200,7 @@ func (p *Peer) pingLoop() {
 	for {
 		select {
 		case <-ping.C:
-			if err := SendItems(p.RW, pingMsg, nil); err != nil {
+			if err := message.SendItems(p.RW, pingMsg, nil); err != nil {
 				p.protoErr <- err
 				return
 			}
@@ -270,11 +227,11 @@ func (p *Peer) readLoop(errc chan<- error) {
 	}
 }
 
-func (p *Peer) handle(msg Msg) error {
+func (p *Peer) handle(msg message.Msg) error {
 	switch {
 	case msg.Code == pingMsg:
 		msg.Discard()
-		go SendItems(p.RW, pongMsg, nil)
+		go message.SendItems(p.RW, pongMsg, nil)
 	case msg.Code == discMsg:
 		var reason [1]peer_error.DiscReason
 		// This is the last message. We don't need to discard or
@@ -301,7 +258,7 @@ func (p *Peer) handle(msg Msg) error {
 }
 
 // matchProtocols creates structures for matching named subprotocols.
-func matchProtocols(protocols []Protocol, caps []Cap, RW MsgReadWriter) map[string]*protoRW {
+func matchProtocols(protocols []Protocol, caps []message.Cap, RW message.MsgReadWriter) map[string]*protoRW {
 	sort.Sort(capsByNameAndVersion(caps))
 	offset := baseProtocolLength
 	result := make(map[string]*protoRW)
@@ -315,7 +272,7 @@ outer:
 					offset -= old.Length
 				}
 				// Assign the new match
-				result[cap.Name] = &protoRW{Protocol: proto, offset: offset, in: make(chan Msg), w: RW}
+				result[cap.Name] = &protoRW{Protocol: proto, offset: offset, in: make(chan message.Msg), w: RW}
 				offset += proto.Length
 
 				continue outer
@@ -332,9 +289,9 @@ func (p *Peer) startProtocols(writeStart <-chan struct{}, writeErr chan<- error)
 		proto.closed = p.closed
 		proto.wstart = writeStart
 		proto.werr = writeErr
-		var RW MsgReadWriter = proto
+		var RW message.MsgReadWriter = proto
 		if p.events != nil {
-			RW = newMsgEventer(RW, p.events, p.ID(), proto.Name)
+			RW = message.NewMsgEventer(RW, p.events, p.ID(), proto.Name)
 		}
 		p.log.Trace(fmt.Sprintf("Starting protocol %s/%d", proto.Name, proto.Version))
 		go func() {
@@ -364,15 +321,15 @@ func (p *Peer) getProto(code uint64) (*protoRW, error) {
 
 type protoRW struct {
 	Protocol
-	in     chan Msg        // receices read messages
-	closed <-chan struct{} // receives when peer is shutting down
-	wstart <-chan struct{} // receives when write may start
-	werr   chan<- error    // for write results
+	in     chan message.Msg // receices read messages
+	closed <-chan struct{}  // receives when peer is shutting down
+	wstart <-chan struct{}  // receives when write may start
+	werr   chan<- error     // for write results
 	offset uint64
-	w      MsgWriter
+	w      message.MsgWriter
 }
 
-func (RW *protoRW) WriteMsg(msg Msg) (err error) {
+func (RW *protoRW) WriteMsg(msg message.Msg) (err error) {
 	if msg.Code >= RW.Length {
 		return peer_error.NewPeerError(peer_error.ErrInvalidMsgCode, "not handled")
 	}
@@ -391,13 +348,13 @@ func (RW *protoRW) WriteMsg(msg Msg) (err error) {
 	return err
 }
 
-func (RW *protoRW) ReadMsg() (Msg, error) {
+func (RW *protoRW) ReadMsg() (message.Msg, error) {
 	select {
 	case msg := <-RW.in:
 		msg.Code -= RW.offset
 		return msg, nil
 	case <-RW.closed:
-		return Msg{}, io.EOF
+		return message.Msg{}, io.EOF
 	}
 }
 

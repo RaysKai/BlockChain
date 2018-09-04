@@ -1,5 +1,5 @@
 syntax = "proto2";
-package msg;
+package protobufmsg;
 
 message Msg {
   required uint64 code = 1;

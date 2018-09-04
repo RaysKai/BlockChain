@@ -2,7 +2,9 @@ package peer
 
 import (
 	_ "github.com/linkchain/common/util/log"
+	"github.com/linkchain/p2p/message"
 	"github.com/linkchain/p2p/node"
+	"github.com/linkchain/p2p/transport"
 	"net"
 	"time"
 )
@@ -34,15 +36,15 @@ const (
 
 type Conn struct {
 	FD net.Conn
-	Transport
+	transport.Transport
 	Flags ConnFlag
-	Cont  chan error  // The run loop uses cont to signal errors to SetupConn.
-	ID    node.NodeID // valid after the encryption handshake
-	Caps  []Cap       // valid after the protocol handshake
-	Name  string      // valid after the protocol handshake
+	Cont  chan error    // The run loop uses cont to signal errors to SetupConn.
+	ID    node.NodeID   // valid after the encryption handshake
+	Caps  []message.Cap // valid after the protocol handshake
+	Name  string        // valid after the protocol handshake
 }
 
-func NewConn(fd net.Conn, transporter func(net.Conn) Transport, flags ConnFlag, cont chan error) *Conn {
+func NewConn(fd net.Conn, transporter func(net.Conn) transport.Transport, flags ConnFlag, cont chan error) *Conn {
 	return &Conn{FD: fd, Transport: transporter(fd), Flags: flags, Cont: make(chan error)}
 }
 

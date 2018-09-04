@@ -9,10 +9,12 @@ import (
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/common/util/mclock"
+	"github.com/linkchain/p2p/message"
 	"github.com/linkchain/p2p/netutil"
 	"github.com/linkchain/p2p/node"
 	"github.com/linkchain/p2p/peer"
 	"github.com/linkchain/p2p/peer_error"
+	"github.com/linkchain/p2p/transport"
 )
 
 var errServerStopped = errors.New("server stopped")
@@ -93,14 +95,14 @@ type Service struct {
 
 	running bool
 
-	ourHandshake *peer.ProtoHandshake
+	ourHandshake *message.ProtoHandshake
 	listener     net.Listener
 
 	// These are for Peers, PeerCount (and nothing else).
 	peerOp     chan peerOpFunc
 	peerOpDone chan struct{}
 
-	newTransport func(net.Conn) peer.Transport
+	newTransport func(net.Conn) transport.Transport
 	newPeerHook  func(*peer.Peer)
 
 	quit          chan struct{}
@@ -161,7 +163,7 @@ func (srv *Service) Start() bool {
 	dialer := newDialState(srv.StaticNodes, srv.BootstrapNodes, nil, dynPeers, srv.NetRestrict)
 
 	// handshake
-	srv.ourHandshake = &peer.ProtoHandshake{Version: peer.BaseProtocolVersion, Name: srv.Name}
+	srv.ourHandshake = &message.ProtoHandshake{Version: peer.BaseProtocolVersion, Name: srv.Name}
 	for _, p := range srv.Protocols {
 		srv.ourHandshake.Caps = append(srv.ourHandshake.Caps, p.Cap())
 	}
@@ -268,7 +270,7 @@ func (srv *Service) RemovePeer(node *node.Node) {
 }
 
 // SubscribePeers subscribes the given channel to peer events
-func (srv *Service) SubscribeEvents(ch chan *peer.PeerEvent) event.Subscription {
+func (srv *Service) SubscribeEvents(ch chan *peer_error.PeerEvent) event.Subscription {
 	return srv.peerFeed.Subscribe(ch)
 }
 
@@ -626,8 +628,8 @@ func (srv *Service) runPeer(p *peer.Peer) {
 	}
 
 	// broadcast peer add
-	srv.peerFeed.Send(&peer.PeerEvent{
-		Type: peer.PeerEventTypeAdd,
+	srv.peerFeed.Send(&peer_error.PeerEvent{
+		Type: peer_error.PeerEventTypeAdd,
 		Peer: p.ID(),
 	})
 
@@ -635,8 +637,8 @@ func (srv *Service) runPeer(p *peer.Peer) {
 	remoteRequested, err := p.Run()
 
 	// broadcast peer drop
-	srv.peerFeed.Send(&peer.PeerEvent{
-		Type:  peer.PeerEventTypeDrop,
+	srv.peerFeed.Send(&peer_error.PeerEvent{
+		Type:  peer_error.PeerEventTypeDrop,
 		Peer:  p.ID(),
 		Error: err.Error(),
 	})
@@ -653,7 +655,7 @@ func truncateName(s string) string {
 	return s
 }
 
-func countMatchingProtocols(protocols []peer.Protocol, caps []peer.Cap) int {
+func countMatchingProtocols(protocols []peer.Protocol, caps []message.Cap) int {
 	n := 0
 	for _, cap := range caps {
 		for _, proto := range protocols {
