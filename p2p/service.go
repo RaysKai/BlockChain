@@ -4,9 +4,26 @@ import (
 	_ "github.com/linkchain/common/util/log"
 	"github.com/linkchain/p2p/node"
 	"net"
+	"time"
 )
 
 type connFlag int
+
+const (
+	defaultDialTimeout = 15 * time.Second
+
+	// Connectivity defaults.
+	maxActiveDialTasks     = 16
+	defaultMaxPendingPeers = 50
+	defaultDialRatio       = 3
+
+	// Maximum time allowed for reading a complete message.
+	// This is effectively the amount of time a connection can be idle.
+	frameReadTimeout = 30 * time.Second
+
+	// Maximum amount of time allowed for writing a complete message.
+	frameWriteTimeout = 20 * time.Second
+)
 
 const (
 	dynDialedConn connFlag = 1 << iota
@@ -70,4 +87,11 @@ func (f connFlag) String() string {
 
 func (c *conn) is(f connFlag) bool {
 	return c.flags&f != 0
+}
+
+func truncateName(s string) string {
+	if len(s) > 20 {
+		return s[:20] + "..."
+	}
+	return s
 }

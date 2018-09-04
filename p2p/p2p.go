@@ -4,9 +4,11 @@ import (
 	"errors"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/common/util/mclock"
 	"github.com/linkchain/p2p/netutil"
 	"github.com/linkchain/p2p/node"
 )
@@ -32,6 +34,18 @@ type Config struct {
 	// Name sets the node name of this server.
 	// Use common.MakeName to create a name that follows existing conventions.
 	Name string `toml:"-"`
+
+	// BootstrapNodes are used to establish connectivity
+	// with the rest of the network.
+	BootstrapNodes []*node.Node
+
+	// Static nodes are used as pre-configured connections which are always
+	// maintained and re-connected on disconnects.
+	StaticNodes []*node.Node
+
+	// Trusted nodes are used as pre-configured connections which are always
+	// allowed to connect, even above the peer limit.
+	TrustedNodes []*node.Node
 
 	// Connectivity can be restricted to certain IP networks.
 	// If this option is set to a non-nil value, only hosts which match one of the
@@ -84,7 +98,9 @@ type Service struct {
 	peerOp     chan peerOpFunc
 	peerOpDone chan struct{}
 
-	newTransport  func(net.Conn) transport
+	newTransport func(net.Conn) transport
+	newPeerHook  func(*Peer)
+
 	quit          chan struct{}
 	addstatic     chan *node.Node
 	removestatic  chan *node.Node
@@ -111,6 +127,56 @@ func (srv *Service) Init(i interface{}) bool {
 
 func (srv *Service) Start() bool {
 	log.Info("p2p service start...")
+	srv.lock.Lock()
+	defer srv.lock.Unlock()
+	if srv.running {
+		return false
+	}
+	srv.running = true
+	srv.log = srv.Config.Logger
+	if srv.log == nil {
+		srv.log = log.New()
+	}
+	srv.log.Info("Starting P2P networking")
+
+	if srv.newTransport == nil {
+		// srv.newTransport = newRLPX
+	}
+	if srv.Dialer == nil {
+		srv.Dialer = TCPDialer{&net.Dialer{Timeout: defaultDialTimeout}}
+	}
+
+	srv.quit = make(chan struct{})
+	srv.addpeer = make(chan *conn)
+	srv.delpeer = make(chan peerDrop)
+	srv.posthandshake = make(chan *conn)
+	srv.addstatic = make(chan *node.Node)
+	srv.removestatic = make(chan *node.Node)
+	srv.peerOp = make(chan peerOpFunc)
+	srv.peerOpDone = make(chan struct{})
+
+	dynPeers := srv.maxDialedConns()
+	dialer := newDialState(srv.StaticNodes, srv.BootstrapNodes, nil, dynPeers, srv.NetRestrict)
+
+	// handshake
+	srv.ourHandshake = &protoHandshake{Version: baseProtocolVersion, Name: srv.Name}
+	for _, p := range srv.Protocols {
+		srv.ourHandshake.Caps = append(srv.ourHandshake.Caps, p.cap())
+	}
+	// listen/dial
+	if srv.ListenAddr != "" {
+		if err := srv.startListening(); err != nil {
+			return false
+		}
+	}
+	if srv.NoDial && srv.ListenAddr == "" {
+		srv.log.Warn("P2P server will be useless, neither dialing nor listening")
+	}
+
+	srv.loopWG.Add(1)
+	go srv.run(dialer)
+	srv.running = true
+
 	return true
 }
 
@@ -128,6 +194,28 @@ func (srv *Service) Stop() {
 	}
 	close(srv.quit)
 	srv.loopWG.Wait()
+}
+
+func (srv *Service) startListening() error {
+	// Launch the TCP listener.
+	listener, err := net.Listen("tcp", srv.ListenAddr)
+	if err != nil {
+		return err
+	}
+	laddr := listener.Addr().(*net.TCPAddr)
+	srv.ListenAddr = laddr.String()
+	srv.listener = listener
+	srv.loopWG.Add(1)
+	go srv.listenLoop()
+	// Map the TCP listening port if NAT is configured.
+	//	if !laddr.IP.IsLoopback() && srv.NAT != nil {
+	//		srv.loopWG.Add(1)
+	//		go func() {
+	//			nat.Map(srv.NAT, srv.quit, "tcp", laddr.Port, laddr.Port, "ethereum p2p")
+	//			srv.loopWG.Done()
+	//		}()
+	//	}
+	return nil
 }
 
 // Peers returns all connected peers.
@@ -284,4 +372,274 @@ func (srv *Service) checkpoint(c *conn, stage chan<- *conn) error {
 	case <-srv.quit:
 		return errServerStopped
 	}
+}
+
+func (srv *Service) maxInboundConns() int {
+	return srv.MaxPeers - srv.maxDialedConns()
+}
+
+func (srv *Service) maxDialedConns() int {
+	if srv.NoDial {
+		return 0
+	}
+	r := srv.DialRatio
+	if r == 0 {
+		r = defaultDialRatio
+	}
+	return srv.MaxPeers / r
+}
+
+type tempError interface {
+	Temporary() bool
+}
+
+// listenLoop runs in its own goroutine and accepts
+// inbound connections.
+func (srv *Service) listenLoop() {
+	defer srv.loopWG.Done()
+	srv.log.Info("RLPx listener up", "self", srv.makeSelf(srv.listener))
+
+	tokens := defaultMaxPendingPeers
+	if srv.MaxPendingPeers > 0 {
+		tokens = srv.MaxPendingPeers
+	}
+	slots := make(chan struct{}, tokens)
+	for i := 0; i < tokens; i++ {
+		slots <- struct{}{}
+	}
+
+	for {
+		// Wait for a handshake slot before accepting.
+		<-slots
+
+		var (
+			fd  net.Conn
+			err error
+		)
+		for {
+			fd, err = srv.listener.Accept()
+			if tempErr, ok := err.(tempError); ok && tempErr.Temporary() {
+				srv.log.Debug("Temporary read error", "err", err)
+				continue
+			} else if err != nil {
+				srv.log.Debug("Read error", "err", err)
+				return
+			}
+			break
+		}
+
+		// Reject connections that do not match NetRestrict.
+		if srv.NetRestrict != nil {
+			if tcp, ok := fd.RemoteAddr().(*net.TCPAddr); ok && !srv.NetRestrict.Contains(tcp.IP) {
+				srv.log.Debug("Rejected conn (not whitelisted in NetRestrict)", "addr", fd.RemoteAddr())
+				fd.Close()
+				slots <- struct{}{}
+				continue
+			}
+		}
+
+		// fd = newMeteredConn(fd, true)
+		srv.log.Trace("Accepted connection", "addr", fd.RemoteAddr())
+		go func() {
+			srv.SetupConn(fd, inboundConn, nil)
+			slots <- struct{}{}
+		}()
+	}
+}
+
+type dialer interface {
+	newTasks(running int, peers map[node.NodeID]*Peer, now time.Time) []task
+	taskDone(task, time.Time)
+	addStatic(*node.Node)
+	removeStatic(*node.Node)
+}
+
+func (srv *Service) run(dialstate dialer) {
+	defer srv.loopWG.Done()
+	var (
+		peers        = make(map[node.NodeID]*Peer)
+		inboundCount = 0
+		trusted      = make(map[node.NodeID]bool, len(srv.TrustedNodes))
+		taskdone     = make(chan task, maxActiveDialTasks)
+		runningTasks []task
+		queuedTasks  []task // tasks that can't run yet
+	)
+	// Put trusted nodes into a map to speed up checks.
+	// Trusted peers are loaded on startup and cannot be
+	// modified while the server is running.
+	for _, n := range srv.TrustedNodes {
+		trusted[n.ID] = true
+	}
+
+	// removes t from runningTasks
+	delTask := func(t task) {
+		for i := range runningTasks {
+			if runningTasks[i] == t {
+				runningTasks = append(runningTasks[:i], runningTasks[i+1:]...)
+				break
+			}
+		}
+	}
+	// starts until max number of active tasks is satisfied
+	startTasks := func(ts []task) (rest []task) {
+		i := 0
+		for ; len(runningTasks) < maxActiveDialTasks && i < len(ts); i++ {
+			t := ts[i]
+			srv.log.Trace("New dial task", "task", t)
+			go func() { t.Do(srv); taskdone <- t }()
+			runningTasks = append(runningTasks, t)
+		}
+		return ts[i:]
+	}
+	scheduleTasks := func() {
+		// Start from queue first.
+		queuedTasks = append(queuedTasks[:0], startTasks(queuedTasks)...)
+		// Query dialer for new tasks and start as many as possible now.
+		if len(runningTasks) < maxActiveDialTasks {
+			nt := dialstate.newTasks(len(runningTasks)+len(queuedTasks), peers, time.Now())
+			queuedTasks = append(queuedTasks, startTasks(nt)...)
+		}
+	}
+
+running:
+	for {
+		scheduleTasks()
+
+		select {
+		case <-srv.quit:
+			// The server was stopped. Run the cleanup logic.
+			break running
+		case n := <-srv.addstatic:
+			// This channel is used by AddPeer to add to the
+			// ephemeral static peer list. Add it to the dialer,
+			// it will keep the node connected.
+			srv.log.Debug("Adding static node", "node", n)
+			dialstate.addStatic(n)
+		case n := <-srv.removestatic:
+			// This channel is used by RemovePeer to send a
+			// disconnect request to a peer and begin the
+			// stop keeping the node connected
+			srv.log.Debug("Removing static node", "node", n)
+			dialstate.removeStatic(n)
+			if p, ok := peers[n.ID]; ok {
+				p.Disconnect(DiscRequested)
+			}
+		case op := <-srv.peerOp:
+			// This channel is used by Peers and PeerCount.
+			op(peers)
+			srv.peerOpDone <- struct{}{}
+		case t := <-taskdone:
+			// A task got done. Tell dialstate about it so it
+			// can update its state and remove it from the active
+			// tasks list.
+			srv.log.Trace("Dial task done", "task", t)
+			dialstate.taskDone(t, time.Now())
+			delTask(t)
+		case c := <-srv.posthandshake:
+			// A connection has passed the encryption handshake so
+			// the remote identity is known (but hasn't been verified yet).
+			if trusted[c.id] {
+				// Ensure that the trusted flag is set before checking against MaxPeers.
+				c.flags |= trustedConn
+			}
+			// TODO: track in-progress inbound node IDs (pre-Peer) to avoid dialing them.
+			select {
+			// case c.cont <- srv.encHandshakeChecks(peers, inboundCount, c):
+			case <-srv.quit:
+				break running
+			}
+		case c := <-srv.addpeer:
+			// At this point the connection is past the protocol handshake.
+			// Its capabilities are known and the remote identity is verified.
+			err := srv.protoHandshakeChecks(peers, inboundCount, c)
+			if err == nil {
+				// The handshakes are done and it passed all checks.
+				p := newPeer(c, srv.Protocols)
+				// If message events are enabled, pass the peerFeed
+				// to the peer
+				if srv.EnableMsgEvents {
+					p.events = &srv.peerFeed
+				}
+				name := truncateName(c.name)
+				srv.log.Debug("Adding p2p peer", "name", name, "addr", c.fd.RemoteAddr(), "peers", len(peers)+1)
+				go srv.runPeer(p)
+				peers[c.id] = p
+				if p.Inbound() {
+					inboundCount++
+				}
+			}
+			// The dialer logic relies on the assumption that
+			// dial tasks complete after the peer has been added or
+			// discarded. Unblock the task last.
+			select {
+			case c.cont <- err:
+			case <-srv.quit:
+				break running
+			}
+		case pd := <-srv.delpeer:
+			// A peer disconnected.
+			d := time.Duration(mclock.Now() - pd.created)
+			pd.log.Debug("Removing p2p peer", "duration", d, "peers", len(peers)-1, "req", pd.requested, "err", pd.err)
+			delete(peers, pd.ID())
+			if pd.Inbound() {
+				inboundCount--
+			}
+		}
+	}
+
+	srv.log.Trace("P2P networking is spinning down")
+
+	// Disconnect all peers.
+	for _, p := range peers {
+		p.Disconnect(DiscQuitting)
+	}
+	// Wait for peers to shut down. Pending connections and tasks are
+	// not handled here and will terminate soon-ish because srv.quit
+	// is closed.
+	for len(peers) > 0 {
+		p := <-srv.delpeer
+		p.log.Trace("<-delpeer (spindown)", "remainingTasks", len(runningTasks))
+		delete(peers, p.ID())
+	}
+}
+
+func (srv *Service) protoHandshakeChecks(peers map[node.NodeID]*Peer, inboundCount int, c *conn) error {
+	// Drop connections with no matching protocols.
+	if len(srv.Protocols) > 0 && countMatchingProtocols(srv.Protocols, c.caps) == 0 {
+		return DiscUselessPeer
+	}
+	// Repeat the encryption handshake checks because the
+	// peer set might have changed between the handshakes.
+	// return srv.encHandshakeChecks(peers, inboundCount, c)
+
+	return nil
+}
+
+// runPeer runs in its own goroutine for each peer.
+// it waits until the Peer logic returns and removes
+// the peer.
+func (srv *Service) runPeer(p *Peer) {
+	if srv.newPeerHook != nil {
+		srv.newPeerHook(p)
+	}
+
+	// broadcast peer add
+	srv.peerFeed.Send(&PeerEvent{
+		Type: PeerEventTypeAdd,
+		Peer: p.ID(),
+	})
+
+	// run the protocol
+	remoteRequested, err := p.run()
+
+	// broadcast peer drop
+	srv.peerFeed.Send(&PeerEvent{
+		Type:  PeerEventTypeDrop,
+		Peer:  p.ID(),
+		Error: err.Error(),
+	})
+
+	// Note: run waits for existing peers to be sent on srv.delpeer
+	// before returning, so this send should not select on srv.quit.
+	srv.delpeer <- peerDrop{p, err, remoteRequested}
 }
