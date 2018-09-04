@@ -27,6 +27,7 @@ import (
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/p2p/netutil"
 	"github.com/linkchain/p2p/node"
+	"github.com/linkchain/p2p/peer"
 )
 
 const (
@@ -74,7 +75,7 @@ type dialstate struct {
 	netrestrict *netutil.Netlist
 
 	lookupRunning bool
-	dialing       map[node.NodeID]connFlag
+	dialing       map[node.NodeID]peer.ConnFlag
 	lookupBuf     []*node.Node // current discovery lookup results
 	randomNodes   []*node.Node // filled from Table
 	static        map[node.NodeID]*dialTask
@@ -108,7 +109,7 @@ type task interface {
 // A dialTask is generated for each node that is dialed. Its
 // fields cannot be accessed while the task is running.
 type dialTask struct {
-	flags        connFlag
+	flags        peer.ConnFlag
 	dest         *node.Node
 	lastResolved time.Time
 	resolveDelay time.Duration
@@ -133,7 +134,7 @@ func newDialState(static []*node.Node, bootnodes []*node.Node, ntab discoverTabl
 		ntab:        ntab,
 		netrestrict: netrestrict,
 		static:      make(map[node.NodeID]*dialTask),
-		dialing:     make(map[node.NodeID]connFlag),
+		dialing:     make(map[node.NodeID]peer.ConnFlag),
 		bootnodes:   make([]*node.Node, len(bootnodes)),
 		randomNodes: make([]*node.Node, maxdyn/2),
 		hist:        new(dialHistory),
@@ -148,7 +149,7 @@ func newDialState(static []*node.Node, bootnodes []*node.Node, ntab discoverTabl
 func (s *dialstate) addStatic(n *node.Node) {
 	// This overwites the task instead of updating an existing
 	// entry, giving users the opportunity to force a resolve operation.
-	s.static[n.ID] = &dialTask{flags: staticDialedConn, dest: n}
+	s.static[n.ID] = &dialTask{flags: peer.StaticDialedConn, dest: n}
 }
 
 func (s *dialstate) removeStatic(n *node.Node) {
@@ -159,13 +160,13 @@ func (s *dialstate) removeStatic(n *node.Node) {
 	s.hist.remove(n.ID)
 }
 
-func (s *dialstate) newTasks(nRunning int, peers map[node.NodeID]*Peer, now time.Time) []task {
+func (s *dialstate) newTasks(nRunning int, peers map[node.NodeID]*peer.Peer, now time.Time) []task {
 	if s.start.IsZero() {
 		s.start = now
 	}
 
 	var newtasks []task
-	addDial := func(flag connFlag, n *node.Node) bool {
+	addDial := func(flag peer.ConnFlag, n *node.Node) bool {
 		if err := s.checkDial(n, peers); err != nil {
 			log.Trace("Skipping dial candidate", "id", n.ID, "addr", &net.TCPAddr{IP: n.IP, Port: int(n.TCP)}, "err", err)
 			return false
@@ -178,12 +179,12 @@ func (s *dialstate) newTasks(nRunning int, peers map[node.NodeID]*Peer, now time
 	// Compute number of dynamic dials necessary at this point.
 	needDynDials := s.maxDynDials
 	for _, p := range peers {
-		if p.rw.is(dynDialedConn) {
+		if p.RW.IS(peer.DynDialedConn) {
 			needDynDials--
 		}
 	}
 	for _, flag := range s.dialing {
-		if flag&dynDialedConn != 0 {
+		if flag&peer.DynDialedConn != 0 {
 			needDynDials--
 		}
 	}
@@ -211,7 +212,7 @@ func (s *dialstate) newTasks(nRunning int, peers map[node.NodeID]*Peer, now time
 		s.bootnodes = append(s.bootnodes[:0], s.bootnodes[1:]...)
 		s.bootnodes = append(s.bootnodes, bootnode)
 
-		if addDial(dynDialedConn, bootnode) {
+		if addDial(peer.DynDialedConn, bootnode) {
 			needDynDials--
 		}
 	}
@@ -221,7 +222,7 @@ func (s *dialstate) newTasks(nRunning int, peers map[node.NodeID]*Peer, now time
 	if randomCandidates > 0 {
 		//		n := s.ntab.ReadRandomNodes(s.randomNodes)
 		//		for i := 0; i < randomCandidates && i < n; i++ {
-		//			if addDial(dynDialedConn, s.randomNodes[i]) {
+		//			if addDial(peer.DynDialedConn, s.randomNodes[i]) {
 		//				needDynDials--
 		//			}
 		//		}
@@ -230,7 +231,7 @@ func (s *dialstate) newTasks(nRunning int, peers map[node.NodeID]*Peer, now time
 	// items from the result buffer.
 	i := 0
 	for ; i < len(s.lookupBuf) && needDynDials > 0; i++ {
-		if addDial(dynDialedConn, s.lookupBuf[i]) {
+		if addDial(peer.DynDialedConn, s.lookupBuf[i]) {
 			needDynDials--
 		}
 	}
@@ -260,7 +261,7 @@ var (
 	errNotWhitelisted   = errors.New("not contained in netrestrict whitelist")
 )
 
-func (s *dialstate) checkDial(n *node.Node, peers map[node.NodeID]*Peer) error {
+func (s *dialstate) checkDial(n *node.Node, peers map[node.NodeID]*peer.Peer) error {
 	_, dialing := s.dialing[n.ID]
 	switch {
 	case dialing:
@@ -298,7 +299,7 @@ func (t *dialTask) Do(srv *Service) {
 	if err != nil {
 		log.Trace("Dial error", "task", t, "err", err)
 		// Try resolving the ID of static nodes if dialing failed.
-		if _, ok := err.(*dialError); ok && t.flags&staticDialedConn != 0 {
+		if _, ok := err.(*dialError); ok && t.flags&peer.StaticDialedConn != 0 {
 			//			if t.resolve(srv) {
 			//				t.dial(srv, t.dest)
 			//			}

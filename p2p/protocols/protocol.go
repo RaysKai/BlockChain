@@ -35,8 +35,9 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/linkchain/p2p"
 	"github.com/linkchain/p2p/msg"
+	"github.com/linkchain/p2p/peer"
+	"github.com/linkchain/p2p/peer_error"
 )
 
 // error codes used by this  protocol scheme
@@ -177,16 +178,16 @@ func (s *Spec) NewMsg(code uint64) (proto.Message, bool) {
 // Peer represents a remote peer or protocol instance that is running on a peer connection with
 // a remote peer
 type Peer struct {
-	*p2p.Peer                   // the p2p.Peer object representing the remote
-	rw        p2p.MsgReadWriter // p2p.MsgReadWriter to send messages to and read messages from
-	spec      *Spec
+	*peer.Peer                    // the p2p.Peer object representing the remote
+	rw         peer.MsgReadWriter // p2p.MsgReadWriter to send messages to and read messages from
+	spec       *Spec
 }
 
 // NewPeer constructs a new peer
 // this constructor is called by the p2p.Protocol#Run function
 // the first two arguments are the arguments passed to p2p.Protocol.Run function
 // the third argument is the Spec describing the protocol
-func NewPeer(p *p2p.Peer, rw p2p.MsgReadWriter, spec *Spec) *Peer {
+func NewPeer(p *peer.Peer, rw peer.MsgReadWriter, spec *Spec) *Peer {
 	return &Peer{
 		Peer: p,
 		rw:   rw,
@@ -211,7 +212,7 @@ func (p *Peer) Run(handler func(msg interface{}) error) error {
 // TODO: may need to implement protocol drop only? don't want to kick off the peer
 // if they are useful for other protocols
 func (p *Peer) Drop(err error) {
-	p.Disconnect(p2p.DiscSubprotocolError)
+	p.Disconnect(peer_error.DiscSubprotocolError)
 }
 
 // Send takes a message, encodes it in RLP, finds the right message code and sends the
@@ -223,7 +224,7 @@ func (p *Peer) Send(msg proto.Message) error {
 	if !found {
 		return errorf(ErrInvalidMsgType, "%v", code)
 	}
-	return p2p.Send(p.rw, code, msg)
+	return peer.Send(p.rw, code, msg)
 }
 
 // handleIncoming(code)

@@ -1,4 +1,4 @@
-package p2p
+package peer
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/linkchain/common/util/event"
 	"github.com/linkchain/p2p/node"
+	"github.com/linkchain/p2p/peer_error"
 	"io"
 	"io/ioutil"
 	"sync/atomic"
@@ -34,11 +35,11 @@ type Msg struct {
 func (msg Msg) Decode(data proto.Message) error {
 	content, err := ioutil.ReadAll(msg.Payload)
 	if err != nil {
-		return newPeerError(errInvalidMsg, "(code %x) (size %d) %v", msg.Code, msg.Size, err)
+		return peer_error.NewPeerError(peer_error.ErrInvalidMsg, "(code %x) (size %d) %v", msg.Code, msg.Size, err)
 	}
 
 	if err := proto.Unmarshal(content, data); err != nil {
-		return newPeerError(errInvalidMsg, "(code %x) (size %d) %v", msg.Code, msg.Size, err)
+		return peer_error.NewPeerError(peer_error.ErrInvalidMsg, "(code %x) (size %d) %v", msg.Code, msg.Size, err)
 	}
 	return nil
 }

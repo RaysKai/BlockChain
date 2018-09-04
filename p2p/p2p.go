@@ -11,6 +11,8 @@ import (
 	"github.com/linkchain/common/util/mclock"
 	"github.com/linkchain/p2p/netutil"
 	"github.com/linkchain/p2p/node"
+	"github.com/linkchain/p2p/peer"
+	"github.com/linkchain/p2p/peer_error"
 )
 
 var errServerStopped = errors.New("server stopped")
@@ -59,7 +61,7 @@ type Config struct {
 	// Protocols should contain the protocols supported
 	// by the server. Matching protocols are launched for
 	// each peer.
-	Protocols []Protocol `toml:"-"`
+	Protocols []peer.Protocol `toml:"-"`
 
 	// If ListenAddr is set to a non-nil address, the server
 	// will listen for incoming connections.
@@ -91,31 +93,31 @@ type Service struct {
 
 	running bool
 
-	ourHandshake *protoHandshake
+	ourHandshake *peer.ProtoHandshake
 	listener     net.Listener
 
 	// These are for Peers, PeerCount (and nothing else).
 	peerOp     chan peerOpFunc
 	peerOpDone chan struct{}
 
-	newTransport func(net.Conn) transport
-	newPeerHook  func(*Peer)
+	newTransport func(net.Conn) peer.Transport
+	newPeerHook  func(*peer.Peer)
 
 	quit          chan struct{}
 	addstatic     chan *node.Node
 	removestatic  chan *node.Node
-	posthandshake chan *conn
-	addpeer       chan *conn
+	posthandshake chan *peer.Conn
+	addpeer       chan *peer.Conn
 	delpeer       chan peerDrop
 	loopWG        sync.WaitGroup // loop, listenLoop
 	peerFeed      event.Feed
 	log           log.Logger
 }
 
-type peerOpFunc func(map[node.NodeID]*Peer)
+type peerOpFunc func(map[node.NodeID]*peer.Peer)
 
 type peerDrop struct {
-	*Peer
+	*peer.Peer
 	err       error
 	requested bool // true if signaled by the peer
 }
@@ -143,13 +145,13 @@ func (srv *Service) Start() bool {
 		// srv.newTransport = newRLPX
 	}
 	if srv.Dialer == nil {
-		srv.Dialer = TCPDialer{&net.Dialer{Timeout: defaultDialTimeout}}
+		srv.Dialer = TCPDialer{&net.Dialer{Timeout: peer.DefaultDialTimeout}}
 	}
 
 	srv.quit = make(chan struct{})
-	srv.addpeer = make(chan *conn)
+	srv.addpeer = make(chan *peer.Conn)
 	srv.delpeer = make(chan peerDrop)
-	srv.posthandshake = make(chan *conn)
+	srv.posthandshake = make(chan *peer.Conn)
 	srv.addstatic = make(chan *node.Node)
 	srv.removestatic = make(chan *node.Node)
 	srv.peerOp = make(chan peerOpFunc)
@@ -159,9 +161,9 @@ func (srv *Service) Start() bool {
 	dialer := newDialState(srv.StaticNodes, srv.BootstrapNodes, nil, dynPeers, srv.NetRestrict)
 
 	// handshake
-	srv.ourHandshake = &protoHandshake{Version: baseProtocolVersion, Name: srv.Name}
+	srv.ourHandshake = &peer.ProtoHandshake{Version: peer.BaseProtocolVersion, Name: srv.Name}
 	for _, p := range srv.Protocols {
-		srv.ourHandshake.Caps = append(srv.ourHandshake.Caps, p.cap())
+		srv.ourHandshake.Caps = append(srv.ourHandshake.Caps, p.Cap())
 	}
 	// listen/dial
 	if srv.ListenAddr != "" {
@@ -219,13 +221,13 @@ func (srv *Service) startListening() error {
 }
 
 // Peers returns all connected peers.
-func (srv *Service) Peers() []*Peer {
-	var ps []*Peer
+func (srv *Service) Peers() []*peer.Peer {
+	var ps []*peer.Peer
 	select {
 	// Note: We'd love to put this function into a variable but
 	// that seems to cause a weird compiler error in some
 	// environments.
-	case srv.peerOp <- func(peers map[node.NodeID]*Peer) {
+	case srv.peerOp <- func(peers map[node.NodeID]*peer.Peer) {
 		for _, p := range peers {
 			ps = append(ps, p)
 		}
@@ -240,7 +242,7 @@ func (srv *Service) Peers() []*Peer {
 func (srv *Service) PeerCount() int {
 	var count int
 	select {
-	case srv.peerOp <- func(ps map[node.NodeID]*Peer) { count = len(ps) }:
+	case srv.peerOp <- func(ps map[node.NodeID]*peer.Peer) { count = len(ps) }:
 		<-srv.peerOpDone
 	case <-srv.quit:
 	}
@@ -266,7 +268,7 @@ func (srv *Service) RemovePeer(node *node.Node) {
 }
 
 // SubscribePeers subscribes the given channel to peer events
-func (srv *Service) SubscribeEvents(ch chan *PeerEvent) event.Subscription {
+func (srv *Service) SubscribeEvents(ch chan *peer.PeerEvent) event.Subscription {
 	return srv.peerFeed.Subscribe(ch)
 }
 
@@ -297,21 +299,21 @@ func (srv *Service) makeSelf(listener net.Listener) *node.Node {
 // SetupConn runs the handshakes and attempts to add the connection
 // as a peer. It returns when the connection has been added as a peer
 // or the handshakes have failed.
-func (srv *Service) SetupConn(fd net.Conn, flags connFlag, dialDest *node.Node) error {
+func (srv *Service) SetupConn(fd net.Conn, flags peer.ConnFlag, dialDest *node.Node) error {
 	self := srv.Self()
 	if self == nil {
 		return errors.New("shutdown")
 	}
-	c := &conn{fd: fd, transport: srv.newTransport(fd), flags: flags, cont: make(chan error)}
+	c := peer.NewConn(fd, srv.newTransport, flags, make(chan error))
 	err := srv.setupConn(c, flags, dialDest)
 	if err != nil {
-		c.close(err)
-		srv.log.Trace("Setting up connection failed", "id", c.id, "err", err)
+		c.Close(err)
+		srv.log.Trace("Setting up connection failed", "id", c.ID, "err", err)
 	}
 	return err
 }
 
-func (srv *Service) setupConn(c *conn, flags connFlag, dialDest *node.Node) error {
+func (srv *Service) setupConn(c *peer.Conn, flags peer.ConnFlag, dialDest *node.Node) error {
 	// Prevent leftover pending conns from entering the handshake.
 	srv.lock.Lock()
 	running := srv.running
@@ -325,11 +327,11 @@ func (srv *Service) setupConn(c *conn, flags connFlag, dialDest *node.Node) erro
 	//		srv.log.Trace("Failed RLPx handshake", "addr", c.fd.RemoteAddr(), "conn", c.flags, "err", err)
 	//		return err
 	//	}
-	clog := srv.log.New("id", c.id, "addr", c.fd.RemoteAddr(), "conn", c.flags)
+	clog := srv.log.New("id", c.ID, "addr", c.FD.RemoteAddr(), "conn", c.Flags)
 	// For dialed connections, check that the remote public key matches.
-	if dialDest != nil && c.id != dialDest.ID {
+	if dialDest != nil && c.ID != dialDest.ID {
 		clog.Trace("Dialed identity mismatch", "want", c, dialDest.ID)
-		return DiscUnexpectedIdentity
+		return peer_error.DiscUnexpectedIdentity
 	}
 	err = srv.checkpoint(c, srv.posthandshake)
 	if err != nil {
@@ -337,16 +339,16 @@ func (srv *Service) setupConn(c *conn, flags connFlag, dialDest *node.Node) erro
 		return err
 	}
 	// Run the protocol handshake
-	phs, err := c.doProtoHandshake(srv.ourHandshake)
+	phs, err := c.DoProtoHandshake(srv.ourHandshake)
 	if err != nil {
 		clog.Trace("Failed proto handshake", "err", err)
 		return err
 	}
-	if phs.ID != c.id {
+	if phs.ID != c.ID {
 		clog.Trace("Wrong devp2p handshake identity", "err", phs.ID)
-		return DiscUnexpectedIdentity
+		return peer_error.DiscUnexpectedIdentity
 	}
-	c.caps, c.name = phs.Caps, phs.Name
+	c.Caps, c.Name = phs.Caps, phs.Name
 	err = srv.checkpoint(c, srv.addpeer)
 	if err != nil {
 		clog.Trace("Rejected peer", "err", err)
@@ -360,14 +362,14 @@ func (srv *Service) setupConn(c *conn, flags connFlag, dialDest *node.Node) erro
 
 // checkpoint sends the conn to run, which performs the
 // post-handshake checks for the stage (posthandshake, addpeer).
-func (srv *Service) checkpoint(c *conn, stage chan<- *conn) error {
+func (srv *Service) checkpoint(c *peer.Conn, stage chan<- *peer.Conn) error {
 	select {
 	case stage <- c:
 	case <-srv.quit:
 		return errServerStopped
 	}
 	select {
-	case err := <-c.cont:
+	case err := <-c.Cont:
 		return err
 	case <-srv.quit:
 		return errServerStopped
@@ -384,7 +386,7 @@ func (srv *Service) maxDialedConns() int {
 	}
 	r := srv.DialRatio
 	if r == 0 {
-		r = defaultDialRatio
+		r = peer.DefaultDialRatio
 	}
 	return srv.MaxPeers / r
 }
@@ -399,7 +401,7 @@ func (srv *Service) listenLoop() {
 	defer srv.loopWG.Done()
 	srv.log.Info("RLPx listener up", "self", srv.makeSelf(srv.listener))
 
-	tokens := defaultMaxPendingPeers
+	tokens := peer.DefaultMaxPendingPeers
 	if srv.MaxPendingPeers > 0 {
 		tokens = srv.MaxPendingPeers
 	}
@@ -441,14 +443,14 @@ func (srv *Service) listenLoop() {
 		// fd = newMeteredConn(fd, true)
 		srv.log.Trace("Accepted connection", "addr", fd.RemoteAddr())
 		go func() {
-			srv.SetupConn(fd, inboundConn, nil)
+			srv.SetupConn(fd, peer.InboundConn, nil)
 			slots <- struct{}{}
 		}()
 	}
 }
 
 type dialer interface {
-	newTasks(running int, peers map[node.NodeID]*Peer, now time.Time) []task
+	newTasks(running int, peers map[node.NodeID]*peer.Peer, now time.Time) []task
 	taskDone(task, time.Time)
 	addStatic(*node.Node)
 	removeStatic(*node.Node)
@@ -457,10 +459,10 @@ type dialer interface {
 func (srv *Service) run(dialstate dialer) {
 	defer srv.loopWG.Done()
 	var (
-		peers        = make(map[node.NodeID]*Peer)
+		peers        = make(map[node.NodeID]*peer.Peer)
 		inboundCount = 0
 		trusted      = make(map[node.NodeID]bool, len(srv.TrustedNodes))
-		taskdone     = make(chan task, maxActiveDialTasks)
+		taskdone     = make(chan task, peer.MaxActiveDialTasks)
 		runningTasks []task
 		queuedTasks  []task // tasks that can't run yet
 	)
@@ -483,7 +485,7 @@ func (srv *Service) run(dialstate dialer) {
 	// starts until max number of active tasks is satisfied
 	startTasks := func(ts []task) (rest []task) {
 		i := 0
-		for ; len(runningTasks) < maxActiveDialTasks && i < len(ts); i++ {
+		for ; len(runningTasks) < peer.MaxActiveDialTasks && i < len(ts); i++ {
 			t := ts[i]
 			srv.log.Trace("New dial task", "task", t)
 			go func() { t.Do(srv); taskdone <- t }()
@@ -495,7 +497,7 @@ func (srv *Service) run(dialstate dialer) {
 		// Start from queue first.
 		queuedTasks = append(queuedTasks[:0], startTasks(queuedTasks)...)
 		// Query dialer for new tasks and start as many as possible now.
-		if len(runningTasks) < maxActiveDialTasks {
+		if len(runningTasks) < peer.MaxActiveDialTasks {
 			nt := dialstate.newTasks(len(runningTasks)+len(queuedTasks), peers, time.Now())
 			queuedTasks = append(queuedTasks, startTasks(nt)...)
 		}
@@ -522,7 +524,7 @@ running:
 			srv.log.Debug("Removing static node", "node", n)
 			dialstate.removeStatic(n)
 			if p, ok := peers[n.ID]; ok {
-				p.Disconnect(DiscRequested)
+				p.Disconnect(peer_error.DiscRequested)
 			}
 		case op := <-srv.peerOp:
 			// This channel is used by Peers and PeerCount.
@@ -538,9 +540,9 @@ running:
 		case c := <-srv.posthandshake:
 			// A connection has passed the encryption handshake so
 			// the remote identity is known (but hasn't been verified yet).
-			if trusted[c.id] {
+			if trusted[c.ID] {
 				// Ensure that the trusted flag is set before checking against MaxPeers.
-				c.flags |= trustedConn
+				c.Flags |= peer.TrustedConn
 			}
 			// TODO: track in-progress inbound node IDs (pre-Peer) to avoid dialing them.
 			select {
@@ -554,16 +556,16 @@ running:
 			err := srv.protoHandshakeChecks(peers, inboundCount, c)
 			if err == nil {
 				// The handshakes are done and it passed all checks.
-				p := newPeer(c, srv.Protocols)
+				p := peer.NewPeer(c, srv.Protocols)
 				// If message events are enabled, pass the peerFeed
 				// to the peer
 				if srv.EnableMsgEvents {
-					p.events = &srv.peerFeed
+					p.SetEvents(&srv.peerFeed)
 				}
-				name := truncateName(c.name)
-				srv.log.Debug("Adding p2p peer", "name", name, "addr", c.fd.RemoteAddr(), "peers", len(peers)+1)
+				name := truncateName(c.Name)
+				srv.log.Debug("Adding p2p peer", "name", name, "addr", c.FD.RemoteAddr(), "peers", len(peers)+1)
 				go srv.runPeer(p)
-				peers[c.id] = p
+				peers[c.ID] = p
 				if p.Inbound() {
 					inboundCount++
 				}
@@ -572,14 +574,14 @@ running:
 			// dial tasks complete after the peer has been added or
 			// discarded. Unblock the task last.
 			select {
-			case c.cont <- err:
+			case c.Cont <- err:
 			case <-srv.quit:
 				break running
 			}
 		case pd := <-srv.delpeer:
 			// A peer disconnected.
-			d := time.Duration(mclock.Now() - pd.created)
-			pd.log.Debug("Removing p2p peer", "duration", d, "peers", len(peers)-1, "req", pd.requested, "err", pd.err)
+			d := time.Duration(mclock.Now() - pd.CreateTime())
+			pd.Log().Debug("Removing p2p peer", "duration", d, "peers", len(peers)-1, "req", pd.requested, "err", pd.err)
 			delete(peers, pd.ID())
 			if pd.Inbound() {
 				inboundCount--
@@ -591,22 +593,22 @@ running:
 
 	// Disconnect all peers.
 	for _, p := range peers {
-		p.Disconnect(DiscQuitting)
+		p.Disconnect(peer_error.DiscQuitting)
 	}
 	// Wait for peers to shut down. Pending connections and tasks are
 	// not handled here and will terminate soon-ish because srv.quit
 	// is closed.
 	for len(peers) > 0 {
 		p := <-srv.delpeer
-		p.log.Trace("<-delpeer (spindown)", "remainingTasks", len(runningTasks))
+		p.Log().Trace("<-delpeer (spindown)", "remainingTasks", len(runningTasks))
 		delete(peers, p.ID())
 	}
 }
 
-func (srv *Service) protoHandshakeChecks(peers map[node.NodeID]*Peer, inboundCount int, c *conn) error {
+func (srv *Service) protoHandshakeChecks(peers map[node.NodeID]*peer.Peer, inboundCount int, c *peer.Conn) error {
 	// Drop connections with no matching protocols.
-	if len(srv.Protocols) > 0 && countMatchingProtocols(srv.Protocols, c.caps) == 0 {
-		return DiscUselessPeer
+	if len(srv.Protocols) > 0 && countMatchingProtocols(srv.Protocols, c.Caps) == 0 {
+		return peer_error.DiscUselessPeer
 	}
 	// Repeat the encryption handshake checks because the
 	// peer set might have changed between the handshakes.
@@ -618,23 +620,23 @@ func (srv *Service) protoHandshakeChecks(peers map[node.NodeID]*Peer, inboundCou
 // runPeer runs in its own goroutine for each peer.
 // it waits until the Peer logic returns and removes
 // the peer.
-func (srv *Service) runPeer(p *Peer) {
+func (srv *Service) runPeer(p *peer.Peer) {
 	if srv.newPeerHook != nil {
 		srv.newPeerHook(p)
 	}
 
 	// broadcast peer add
-	srv.peerFeed.Send(&PeerEvent{
-		Type: PeerEventTypeAdd,
+	srv.peerFeed.Send(&peer.PeerEvent{
+		Type: peer.PeerEventTypeAdd,
 		Peer: p.ID(),
 	})
 
 	// run the protocol
-	remoteRequested, err := p.run()
+	remoteRequested, err := p.Run()
 
 	// broadcast peer drop
-	srv.peerFeed.Send(&PeerEvent{
-		Type:  PeerEventTypeDrop,
+	srv.peerFeed.Send(&peer.PeerEvent{
+		Type:  peer.PeerEventTypeDrop,
 		Peer:  p.ID(),
 		Error: err.Error(),
 	})
@@ -642,4 +644,23 @@ func (srv *Service) runPeer(p *Peer) {
 	// Note: run waits for existing peers to be sent on srv.delpeer
 	// before returning, so this send should not select on srv.quit.
 	srv.delpeer <- peerDrop{p, err, remoteRequested}
+}
+
+func truncateName(s string) string {
+	if len(s) > 20 {
+		return s[:20] + "..."
+	}
+	return s
+}
+
+func countMatchingProtocols(protocols []peer.Protocol, caps []peer.Cap) int {
+	n := 0
+	for _, cap := range caps {
+		for _, proto := range protocols {
+			if proto.Name == cap.Name && proto.Version == cap.Version {
+				n++
+			}
+		}
+	}
+	return n
 }

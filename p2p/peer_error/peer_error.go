@@ -1,4 +1,4 @@
-package p2p
+package peer_error
 
 import (
 	"errors"
@@ -6,13 +6,13 @@ import (
 )
 
 const (
-	errInvalidMsgCode = iota
-	errInvalidMsg
+	ErrInvalidMsgCode = iota
+	ErrInvalidMsg
 )
 
 var errorToString = map[int]string{
-	errInvalidMsgCode: "invalid message code",
-	errInvalidMsg:     "invalid message",
+	ErrInvalidMsgCode: "invalid message code",
+	ErrInvalidMsg:     "invalid message",
 }
 
 type peerError struct {
@@ -20,7 +20,7 @@ type peerError struct {
 	message string
 }
 
-func newPeerError(code int, format string, v ...interface{}) *peerError {
+func NewPeerError(code int, format string, v ...interface{}) *peerError {
 	desc, ok := errorToString[code]
 	if !ok {
 		panic("invalid error code")
@@ -36,7 +36,7 @@ func (self *peerError) Error() string {
 	return self.message
 }
 
-var errProtocolReturned = errors.New("protocol returned")
+var ErrProtocolReturned = errors.New("protocol returned")
 
 type DiscReason uint
 
@@ -83,17 +83,17 @@ func (d DiscReason) Error() string {
 	return d.String()
 }
 
-func discReasonForError(err error) DiscReason {
+func DiscReasonForError(err error) DiscReason {
 	if reason, ok := err.(DiscReason); ok {
 		return reason
 	}
-	if err == errProtocolReturned {
+	if err == ErrProtocolReturned {
 		return DiscQuitting
 	}
 	peerError, ok := err.(*peerError)
 	if ok {
 		switch peerError.code {
-		case errInvalidMsgCode, errInvalidMsg:
+		case ErrInvalidMsgCode, ErrInvalidMsg:
 			return DiscProtocolError
 		default:
 			return DiscSubprotocolError
