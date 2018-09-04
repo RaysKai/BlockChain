@@ -10,6 +10,8 @@ import (
 	"github.com/linkchain/p2p/node"
 )
 
+var errServerStopped = errors.New("server stopped")
+
 type Config struct {
 
 	// MaxPeers is the maximum number of peers that can be
@@ -70,8 +72,18 @@ type Config struct {
 type Service struct {
 	Config
 
-	lock    sync.Mutex // protects running
+	lock sync.Mutex // protects running
+
 	running bool
+
+	ourHandshake *protoHandshake
+	listener     net.Listener
+
+	newTransport  func(net.Conn) transport
+	quit          chan struct{}
+	posthandshake chan *conn
+	addpeer       chan *conn
+	log           log.Logger
 }
 
 func (s *Service) Init(i interface{}) bool {
@@ -131,4 +143,67 @@ func (srv *Service) SetupConn(fd net.Conn, flags connFlag, dialDest *node.Node) 
 		srv.log.Trace("Setting up connection failed", "id", c.id, "err", err)
 	}
 	return err
+}
+
+func (srv *Service) setupConn(c *conn, flags connFlag, dialDest *node.Node) error {
+	// Prevent leftover pending conns from entering the handshake.
+	srv.lock.Lock()
+	running := srv.running
+	srv.lock.Unlock()
+	if !running {
+		return errServerStopped
+	}
+	// Run the encryption handshake.
+	var err error
+	//	if c.id, err = c.doEncHandshake(srv.PrivateKey, dialDest); err != nil {
+	//		srv.log.Trace("Failed RLPx handshake", "addr", c.fd.RemoteAddr(), "conn", c.flags, "err", err)
+	//		return err
+	//	}
+	clog := srv.log.New("id", c.id, "addr", c.fd.RemoteAddr(), "conn", c.flags)
+	// For dialed connections, check that the remote public key matches.
+	if dialDest != nil && c.id != dialDest.ID {
+		clog.Trace("Dialed identity mismatch", "want", c, dialDest.ID)
+		return DiscUnexpectedIdentity
+	}
+	err = srv.checkpoint(c, srv.posthandshake)
+	if err != nil {
+		clog.Trace("Rejected peer before protocol handshake", "err", err)
+		return err
+	}
+	// Run the protocol handshake
+	phs, err := c.doProtoHandshake(srv.ourHandshake)
+	if err != nil {
+		clog.Trace("Failed proto handshake", "err", err)
+		return err
+	}
+	if phs.ID != c.id {
+		clog.Trace("Wrong devp2p handshake identity", "err", phs.ID)
+		return DiscUnexpectedIdentity
+	}
+	c.caps, c.name = phs.Caps, phs.Name
+	err = srv.checkpoint(c, srv.addpeer)
+	if err != nil {
+		clog.Trace("Rejected peer", "err", err)
+		return err
+	}
+	// If the checks completed successfully, runPeer has now been
+	// launched by run.
+	clog.Trace("connection set up", "inbound", dialDest == nil)
+	return nil
+}
+
+// checkpoint sends the conn to run, which performs the
+// post-handshake checks for the stage (posthandshake, addpeer).
+func (srv *Service) checkpoint(c *conn, stage chan<- *conn) error {
+	select {
+	case stage <- c:
+	case <-srv.quit:
+		return errServerStopped
+	}
+	select {
+	case err := <-c.cont:
+		return err
+	case <-srv.quit:
+		return errServerStopped
+	}
 }
