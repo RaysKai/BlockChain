@@ -36,11 +36,11 @@ func ExampleMsgPipe() {
 		}
 		data := example.Test{}
 		msg.Decode(&data)
-		fmt.Printf("msg: %d, %x\n", msg.Code, data)
+		fmt.Printf("msg: %d, %d, %s, %v, %x\n", msg.Code, msg.Size, *data.Label, *data.Type, data.Reps)
 	}
 	// Output:
-	// msg: 8, 0000
-	// msg: 5, 0101
+	// msg: 8, 15, hello, 17, [1 2 3]
+	// msg: 5, 12, hi, 16, [3 1 2]
 }
 
 func TestMsgPipeUnblockWrite(t *testing.T) {
