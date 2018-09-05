@@ -18,13 +18,6 @@ const (
 	MaxActiveDialTasks     = 16
 	DefaultMaxPendingPeers = 50
 	DefaultDialRatio       = 3
-
-	// Maximum time allowed for reading a complete message.
-	// This is effectively the amount of time a connection can be idle.
-	frameReadTimeout = 30 * time.Second
-
-	// Maximum amount of time allowed for writing a complete message.
-	frameWriteTimeout = 20 * time.Second
 )
 
 const (

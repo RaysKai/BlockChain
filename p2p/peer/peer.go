@@ -17,23 +17,9 @@ import (
 )
 
 const (
-	BaseProtocolVersion    = 5
-	baseProtocolLength     = uint64(16)
-	baseProtocolMaxMsgSize = 2 * 1024
-
-	snappyProtocolVersion = 5
-
-	pingInterval = 15 * time.Second
-)
-
-const (
-	// devp2p message codes
-	handshakeMsg = 0x00
-	discMsg      = 0x01
-	pingMsg      = 0x02
-	pongMsg      = 0x03
-	getPeersMsg  = 0x04
-	peersMsg     = 0x05
+	pingInterval        = 15 * time.Second
+	BaseProtocolVersion = 5
+	BaseProtocolLength  = uint64(16)
 )
 
 type capsByNameAndVersion []message.Cap
@@ -200,7 +186,7 @@ func (p *Peer) pingLoop() {
 	for {
 		select {
 		case <-ping.C:
-			if err := message.SendItems(p.RW, pingMsg, nil); err != nil {
+			if err := message.SendItems(p.RW, message.PingMsg, nil); err != nil {
 				p.protoErr <- err
 				return
 			}
@@ -229,16 +215,16 @@ func (p *Peer) readLoop(errc chan<- error) {
 
 func (p *Peer) handle(msg message.Msg) error {
 	switch {
-	case msg.Code == pingMsg:
+	case msg.Code == message.PingMsg:
 		msg.Discard()
-		go message.SendItems(p.RW, pongMsg, nil)
-	case msg.Code == discMsg:
+		go message.SendItems(p.RW, message.PongMsg, nil)
+	case msg.Code == message.DiscMsg:
 		var reason [1]peer_error.DiscReason
 		// This is the last message. We don't need to discard or
 		// check errors because, the connection will be closed after it.
 		// rlp.Decode(msg.Payload, &reason)
 		return reason[0]
-	case msg.Code < baseProtocolLength:
+	case msg.Code < BaseProtocolLength:
 		// ignore other base protocol messages
 		return msg.Discard()
 	default:
@@ -260,7 +246,7 @@ func (p *Peer) handle(msg message.Msg) error {
 // matchProtocols creates structures for matching named subprotocols.
 func matchProtocols(protocols []Protocol, caps []message.Cap, RW message.MsgReadWriter) map[string]*protoRW {
 	sort.Sort(capsByNameAndVersion(caps))
-	offset := baseProtocolLength
+	offset := BaseProtocolLength
 	result := make(map[string]*protoRW)
 
 outer:

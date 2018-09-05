@@ -144,7 +144,7 @@ func (srv *Service) Start() bool {
 	srv.log.Info("Starting P2P networking")
 
 	if srv.newTransport == nil {
-		// srv.newTransport = newRLPX
+		srv.newTransport = transport.NewPbfmsg
 	}
 	if srv.Dialer == nil {
 		srv.Dialer = TCPDialer{&net.Dialer{Timeout: peer.DefaultDialTimeout}}

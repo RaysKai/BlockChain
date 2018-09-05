@@ -28,6 +28,16 @@ type Msg struct {
 	ReceivedAt time.Time
 }
 
+const (
+	// devp2p message codes
+	HandshakeMsg = 0x00
+	DiscMsg      = 0x01
+	PingMsg      = 0x02
+	PongMsg      = 0x03
+	GetPeersMsg  = 0x04
+	PeersMsg     = 0x05
+)
+
 // Decode parses the RLP content of a message into
 // the given value, which must be a pointer.
 //
