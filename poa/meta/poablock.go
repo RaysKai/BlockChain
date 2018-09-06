@@ -2,8 +2,6 @@ package meta
 
 import (
 	"encoding/json"
-	"bytes"
-	"encoding/binary"
 	"crypto/sha256"
 	"time"
 
@@ -11,7 +9,6 @@ import (
 	"github.com/linkchain/common/serialize"
 	"github.com/linkchain/common/math"
 	"github.com/linkchain/meta/block"
-	"reflect"
 )
 
 type POABlock struct{
@@ -52,9 +49,6 @@ func New()(block.IBlock, error){
 	return block, nil
 }
 
-func TypeConvert(i interface{}) interface{}  {
-	return reflect.ValueOf(i)
-}
 
 func (b *POABlock)SetTx([]tx.ITx)(error){
 	return nil
@@ -65,11 +59,12 @@ func (b *POABlock)GetHeight() uint32{
 }
 
 func (b *POABlock)GetBlockID() block.IBlockID{
-	data := make([]byte, 0)
+	/*data := make([]byte, 0)
 	buf := bytes.NewBuffer(data)
 	binary.Write(buf, binary.BigEndian, b.Header.Version)
 
-	first := sha256.Sum256(buf.Bytes())
+	first := sha256.Sum256(buf.Bytes())*/
+	first := sha256.Sum256(b.Header.PrevBlock.CloneBytes())
 	return math.Hash(sha256.Sum256(first[:]))
 }
 
@@ -100,10 +95,6 @@ func (b *POABlock)ToString()(string){
 
 
 func (bh *POABlockHeader)GetBlockID() block.IBlockID{
-	data := make([]byte, 0)
-	buf := bytes.NewBuffer(data)
-	binary.Write(buf, binary.BigEndian, bh.Version)
-
-	first := sha256.Sum256(buf.Bytes())
+	first := sha256.Sum256(bh.PrevBlock.CloneBytes())
 	return math.Hash(sha256.Sum256(first[:]))
 }

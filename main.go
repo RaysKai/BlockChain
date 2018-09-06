@@ -2,11 +2,11 @@ package main
 
 import (
 	"os"
-	//"fmt"
+	"fmt"
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/cmd"
 	"strings"
-	//"bufio"
+	"bufio"
 )
 
 
@@ -16,11 +16,19 @@ func main() {
 		log.LvlFilterHandler(log.Lvl(log.LvlInfo),
 			log.StreamHandler(os.Stdout, log.TerminalFormat(true))))
 
-	words := strings.Fields("start")
 
-	cmd.RootCmd.SetArgs(words)
+	start := strings.Fields("start")
+
+	cmd.RootCmd.SetArgs(start)
 	cmd.RootCmd.Execute()
-	/*scanner := bufio.NewScanner(os.Stdin)
+
+	mine := strings.Fields("mine")
+
+	cmd.RootCmd.SetArgs(mine)
+	cmd.RootCmd.Execute()
+
+
+	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print(">")
 		// Scans a line from Stdin(Console)
@@ -34,5 +42,5 @@ func main() {
 			cmd.RootCmd.Execute()
 		}
 
-	}*/
+	}
 }

@@ -3,7 +3,7 @@ package meta
 import "github.com/linkchain/common/math"
 
 type POATransaction struct {
-	// Version of the Transaction.  This is not the same as the Block version.
+	// Version of the Transaction.  This is not the same as the Blocks version.
 	Version int32
 
 	From []POATransactionIn

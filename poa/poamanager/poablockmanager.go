@@ -1,6 +1,7 @@
 package poamanager
 
 import (
+	"sync"
 	"time"
 	"errors"
 
@@ -8,7 +9,6 @@ import (
 	"github.com/linkchain/common/util/log"
 	"github.com/linkchain/common/math"
 	poameta "github.com/linkchain/poa/meta"
-	"sync"
 )
 
 const (
@@ -57,12 +57,19 @@ func (m *POABlockManager) Stop(){
 
 /** interface: BlockBaseManager **/
 func (m *POABlockManager) NewBlock() block.IBlock{
-	txs := []poameta.POATransaction{}
-	block := &poameta.POABlock{
-		Header:poameta.POABlockHeader{Version:0, PrevBlock:math.Hash{},MerkleRoot:math.Hash{},Timestamp:time.Now(),Difficulty:0x207fffff,Nonce:0,Extra:nil},
-		TXs:txs,
+	bestBlock := GetManager().ChainManager.GetBestBlock()
+	if bestBlock != nil {
+		bestHash := bestBlock.GetBlockID().(math.Hash)
+		txs := []poameta.POATransaction{}
+		block := &poameta.POABlock{
+			Header: poameta.POABlockHeader{Version: 0, PrevBlock: bestHash, MerkleRoot: math.Hash{}, Timestamp: time.Now(), Difficulty: 0x207fffff, Nonce: 0, Extra: nil, Height: bestBlock.GetHeight() + 1},
+			TXs:    txs,
+		}
+		return block
+	}else {
+		return m.GetGensisBlock()
 	}
-	return block
+
 }
 
 /** interface: BlockBaseManager **/
@@ -117,9 +124,7 @@ func (m *POABlockManager) RemoveBlock(hash block.IBlockID) error{
 /** interface: BlockValidator **/
 func (m *POABlockManager) CheckBlock(block block.IBlock) bool {
 	log.Info("POA CheckBlock ...")
-	GetManager().ChainManager.AddBlock(block)
-	log.Info("POA Add a Block","block",block)
-	log.Info("POA GetBestHeader","blockhash", GetManager().ChainManager.GetBestBlock().GetBlockID().GetString())
+
 	return true
 }
 
@@ -130,9 +135,18 @@ func (s *POABlockManager) ProcessBlock(block block.IBlock){
 		log.Error("POA checkBlock failed")
 		return
 	}
-	//2.updateChain
-	if GetManager().ChainManager.UpdateChain() {
-		log.Info("Update chain successed")
+
+	//2.acceptBlock
+	GetManager().ChainManager.AddBlock(block)
+	log.Info("POA Add a Blocks","block",block)
+	log.Info("POA Add a Blocks","blockhash",block.GetBlockID().GetString())
+
+	//3.updateChain
+	if !GetManager().ChainManager.UpdateChain() {
+		log.Info("POA Update chain failed")
+		return
 	}
-	//3.updateStorage
+	log.Info("POA ProcessBlock successed","blockchaininfo", GetManager().ChainManager.GetBlockChainInfo())
+
+	//4.updateStorage
 }

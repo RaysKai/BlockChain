@@ -35,6 +35,6 @@ func Run(){
 		v.Start()
 	}
 
-	block :=svcList[1].(*consensus.Service).GetBlockManager().NewBlock()
-	svcList[1].(*consensus.Service).GetBlockManager().ProcessBlock(block)
+	/*block :=svcList[1].(*consensus.Service).GetBlockManager().NewBlock()
+	svcList[1].(*consensus.Service).GetBlockManager().ProcessBlock(block)*/
 }
