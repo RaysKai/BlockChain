@@ -82,7 +82,7 @@ func (p *pbfmsg) Close(err error) {
 			// the disconnect reason message if there is no error.
 			if err := p.fd.SetWriteDeadline(time.Now().Add(discWriteTimeout)); err == nil {
 				// TODO: fix me
-				// message.SendItems(p.rw, message.DiscMsg, r)
+				message.SendItems(p.rw, message.DiscMsg, nil)
 			}
 		}
 	}
