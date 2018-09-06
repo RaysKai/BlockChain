@@ -1,7 +1,7 @@
 package transport
 
 import (
-	_ "bytes"
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/golang/protobuf/proto"
@@ -176,6 +176,18 @@ func (rw *pbfFrameRW) WriteMsg(msg message.Msg) error {
 		return err
 	}
 
+	headbuf := make([]byte, 32)
+	dataSize := len(data)
+	if uint32(dataSize) > maxUint24 {
+		return errors.New("message size overflows uint24")
+	}
+
+	putInt24(uint32(dataSize), headbuf)
+
+	if _, err := rw.conn.Write(headbuf); err != nil {
+		return err
+	}
+
 	if _, err := rw.conn.Write(data); err != nil {
 		return err
 	}
@@ -190,5 +202,33 @@ func (rw *pbfFrameRW) ReadMsg() (msg message.Msg, err error) {
 		return msg, err
 	}
 
+	dataSize := readInt24(headbuf)
+
+	framebuf := make([]byte, dataSize)
+	if _, err := io.ReadFull(rw.conn, framebuf); err != nil {
+		return msg, err
+	}
+
+	protubufMsg := protobufmsg.Msg{}
+
+	if err := proto.Unmarshal(framebuf, &protubufMsg); err != nil {
+		return msg, err
+	}
+
+	msg.Code = *protubufMsg.Code
+	msg.Size = uint32(len(protubufMsg.Payload))
+	msg.Payload = bytes.NewReader(protubufMsg.Payload)
+	msg.ReceivedAt = time.Now()
+
 	return msg, nil
+}
+
+func readInt24(b []byte) uint32 {
+	return uint32(b[2]) | uint32(b[1])<<8 | uint32(b[0])<<16
+}
+
+func putInt24(v uint32, b []byte) {
+	b[0] = byte(v >> 16)
+	b[1] = byte(v >> 8)
+	b[2] = byte(v)
 }
