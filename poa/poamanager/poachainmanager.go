@@ -127,7 +127,7 @@ func (m *POAChainManager) AddBlock(block block.IBlock)  {
 	}
 	m.sortChains(newblock)
 	longest,_ := m.GetLongestChain()
-	log.Info("AddBlock","CHAIN",longest)
+	log.Info("AddBlock","Longest Chain height",len(longest.Blocks),"Longest Chain bestHash",longest.GetLastBlock().GetBlockID().GetString())
 }
 
 func (m *POAChainManager) GetBlockAncestor(block block.IBlock,height uint32) block.IBlock {

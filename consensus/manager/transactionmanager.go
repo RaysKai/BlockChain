@@ -4,11 +4,12 @@ import (
 	"hash"
 	"github.com/linkchain/meta/tx"
 	"github.com/linkchain/meta/account"
+	"github.com/linkchain/meta"
 )
 
 type TransactionManager interface{
 	TransactionValidator
-	NewTransaction(account.IAccount, account.IAccount) tx.ITx
+	NewTransaction(account.IAccount, account.IAccount, meta.IAmount) tx.ITx
 	SignTransaction(tx tx.ITx) error
 	ProcessTx(tx tx.ITx)
 }

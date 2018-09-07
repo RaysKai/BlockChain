@@ -138,8 +138,8 @@ func (s *POABlockManager) ProcessBlock(block block.IBlock){
 
 	//2.acceptBlock
 	GetManager().ChainManager.AddBlock(block)
-	log.Info("POA Add a Blocks","block",block)
-	log.Info("POA Add a Blocks","blockhash",block.GetBlockID().GetString())
+	log.Info("POA Add a Blocks","block hash",block.GetBlockID().GetString())
+	log.Info("POA Add a Blocks","prev hash",block.GetPrevBlockID().GetString())
 
 	//3.updateChain
 	if !GetManager().ChainManager.UpdateChain() {
