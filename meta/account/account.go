@@ -15,8 +15,6 @@ type IAccount interface {
 	GetAmount() meta.IAmount
 
 	GetAccountID()  IAccountID
-	//verifiy
-	Verify()(error)
 
 	//serialize
 	serialize.ISerialize

@@ -3,11 +3,12 @@ package manager
 import (
 	"hash"
 	"github.com/linkchain/meta/tx"
+	"github.com/linkchain/meta/account"
 )
 
 type TransactionManager interface{
 	TransactionValidator
-	NewTransaction() tx.ITx
+	NewTransaction(account.IAccount, account.IAccount) tx.ITx
 	SignTransaction(tx tx.ITx) error
 	ProcessTx(tx tx.ITx)
 }

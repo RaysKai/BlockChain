@@ -15,6 +15,9 @@ type ITxID interface{
 }
 
 type ITx interface {
+
+	GetTxID() ITxID
+
 	//tx content
 	SetFrom(from ITxPeer)
 	SetTo(to ITxPeer)

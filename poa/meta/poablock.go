@@ -44,7 +44,7 @@ type POABlockHeader struct {
 }
 
 
-func New()(block.IBlock, error){
+func NewPOABlock()(block.IBlock, error){
 	block := &POABlock{}
 	return block, nil
 }

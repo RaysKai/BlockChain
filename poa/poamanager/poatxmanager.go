@@ -3,14 +3,17 @@ package poamanager
 import (
 	"github.com/linkchain/meta/tx"
 	"github.com/linkchain/common/util/log"
+	"github.com/linkchain/poa/meta"
+	"github.com/linkchain/meta/account"
 )
 
 type POATxManager struct {
 }
 
 
-func (m *POATxManager) NewTransaction() tx.ITx {
-	return nil
+func (m *POATxManager) NewTransaction(form account.IAccount,to account.IAccount) tx.ITx {
+	newTx := &meta.POATransaction{Version:0,}
+	return newTx
 }
 
 func (m *POATxManager) CheckTx(tx tx.ITx) bool {
