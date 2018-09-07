@@ -20,6 +20,8 @@ var mineCmd = &cobra.Command{
 	Short: "generate a new block",
 	Run: func(cmd *cobra.Command, args []string) {
 		block := poamanager.GetManager().BlockManager.NewBlock()
+		txs := poamanager.GetManager().TransactionManager.GetAllTransaction()
+		block.SetTx(txs)
 		poamanager.GetManager().BlockManager.ProcessBlock(block)
 	},
 }

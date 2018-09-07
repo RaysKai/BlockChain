@@ -50,7 +50,10 @@ func NewPOABlock()(block.IBlock, error){
 }
 
 
-func (b *POABlock)SetTx([]tx.ITx)(error){
+func (b *POABlock)SetTx(newTXs []tx.ITx)(error){
+	for _,tx := range newTXs{
+		b.TXs = append(b.TXs,*tx.(*POATransaction))
+	}
 	return nil
 }
 

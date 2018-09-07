@@ -8,6 +8,7 @@ import (
 	"github.com/linkchain/common/serialize"
 	"crypto/sha256"
 	"encoding/json"
+	"time"
 )
 
 type POATransactionPeer struct {
@@ -34,6 +35,7 @@ type POATransaction struct {
 
 	Amount POAAmount
 
+	Time time.Time
 	// Extra used to extenion the block.
 	Extra []byte
 
@@ -41,7 +43,8 @@ type POATransaction struct {
 }
 
 func (tx *POATransaction) GetTxID() tx.ITxID  {
-	first := sha256.Sum256(tx.To.AccountID.ID.CloneBytes())
+	time,_ := tx.Time.GobEncode()
+	first := sha256.Sum256(time)
 	return math.Hash(sha256.Sum256(first[:]))
 }
 

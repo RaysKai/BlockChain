@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 	"errors"
+	"crypto/sha256"
 
 	"github.com/linkchain/meta/block"
 	"github.com/linkchain/common/util/log"
@@ -75,6 +76,13 @@ func (m *POABlockManager) NewBlock() block.IBlock{
 /** interface: BlockBaseManager **/
 func (m *POABlockManager) GetGensisBlock() block.IBlock{
 	txs := []poameta.POATransaction{}
+	fromAddress := math.Hash(sha256.Sum256([]byte("lf")))
+	toAddress := math.Hash(sha256.Sum256([]byte("lc")))
+	formAccount := &poameta.POAAccount{AccountID:poameta.POAAccountID{ID:fromAddress}}
+	toAccount := &poameta.POAAccount{AccountID:poameta.POAAccountID{ID:toAddress}}
+	amount := &poameta.POAAmount{Value:10}
+	tx := *GetManager().TransactionManager.NewTransaction(formAccount,toAccount,amount).(*poameta.POATransaction)
+	txs = append(txs, tx)
 	block := &poameta.POABlock{
 		Header:poameta.POABlockHeader{Version:0, PrevBlock:math.Hash{},MerkleRoot:math.Hash{},Timestamp:time.Now(),Difficulty:0x207fffff,Nonce:0,Extra:[]byte(string("hello,I am gensis block"))},
 		TXs:txs,

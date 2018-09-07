@@ -32,6 +32,7 @@ func (m *POAManager) Init(i interface{}) bool{
 	//TODO Account init
 	m.ChainManager.Init(i)
 	m.BlockManager.Init(i)
+	m.TransactionManager.Init(i)
 	//TODO Transaction init
 	return true
 }
