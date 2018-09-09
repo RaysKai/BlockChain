@@ -42,6 +42,13 @@ New branch for my codebase.
 
 - **[Where Is Current Research on Blockchain Technology?—A Systematic Review](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0163477)**. Jesse Yli-Huumo, Deokyoon Ko, Sujin Choi , Sooyong Park, Kari Smolander. PLOSone, 2016.
 
+- **[BlockSci: Design and applications of a blockchain analysis platform](https://arxiv.org/abs/1709.02489)**. Kalodner, Harry & Goldfeder, Steven & Chator, Alishah & Möser, Malte & Narayanan, Arvind. ArXiv 2017.
+
+- **[ForkBase: An Efficient Storage Engine for Blockchain and Forkable Applications](http://www.vldb.org/pvldb/vol11/p1137-wang.pdf)**. Sheng Wang, Tien Tuan Anh Dinh, Qian Lin, Zhongle Xie, Meihui Zhang, Qingchao Cai, Gang Chen, Wanzeng Fu, Beng Chin Ooi, Pingcheng Ruan. VLDB 2017.
+
+- **[Tutorial: Blockchains and Databases](http://www.vldb.org/pvldb/vol10/p2000-mohan.pdf)**. C Mohan. VLDB 2017. [Slides](https://drive.google.com/file/d/0B7lNUaak0bK1ZDhkak05VHA0d00/view)
+
+- **[Research Directions in Blockchain Data Management and Analytics](https://openproceedings.org/2018/conf/edbt/paper-227.pdf)**. Hoang Tam Vo, Ashish Kundu, Mukesh Mohania. EDBT 2018.
 
 ## Consensus
 
