@@ -226,6 +226,8 @@ New branch for my codebase.
 
 ## Reference
 
+[VLDB 2017](http://www.vldb.org/2017/)
+
 [A curated list of blockchain-related academic papers.](https://github.com/sindresorhus/awesome)
 
 
