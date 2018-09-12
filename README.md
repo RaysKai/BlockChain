@@ -40,6 +40,8 @@ New branch for my codebase.
 
 ## Basebase Perspective
 
+-- **[Untangling Blockchain: A Data Processing View of Blockchain Systems](https://arxiv.org/pdf/1708.05665.pdf)**. Tien Tuan Anh Dinh, Rui Liu, Meihui Zhang, Beng Chin Ooi, and Ji Wang (SIGMOD 2017)
+
 - **[Where Is Current Research on Blockchain Technology?—A Systematic Review](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0163477)**. Jesse Yli-Huumo, Deokyoon Ko, Sujin Choi , Sooyong Park, Kari Smolander. PLOSone, 2016.
 
 - **[BlockSci: Design and applications of a blockchain analysis platform](https://arxiv.org/abs/1709.02489)**. Kalodner, Harry & Goldfeder, Steven & Chator, Alishah & Möser, Malte & Narayanan, Arvind. ArXiv 2017.
