@@ -39,7 +39,7 @@ New branch for my codebase.
 - **[Bitcoin: A Peer-to-Peer Electronic Cash System](https://bitcoin.com/bitcoin.pdf)**. Nakamoto S. '08.
 - **[SoK: Research Perspectives and Challenges for Bitcoin and Cryptocurrencies](http://www.jbonneau.com/doc/BMCNKF15-IEEESP-bitcoin.pdf)**. Bonneau J, Miller A, Clark J, Narayanan A, Kroll JA, Felten EW. S&P '15.
 
-## Basebase Perspective
+## Database Perspective
 
 -- **[Untangling Blockchain: A Data Processing View of Blockchain Systems](https://arxiv.org/pdf/1708.05665.pdf)**. Tien Tuan Anh Dinh, Rui Liu, Meihui Zhang, Beng Chin Ooi, and Ji Wang (SIGMOD 2017)
 
