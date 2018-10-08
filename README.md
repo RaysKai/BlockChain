@@ -10,7 +10,7 @@ New branch for my codebase.
 
 ## Table of Contents
 1. [General](#general)
-1. [From Database Community](#Basebase-Perspective)
+1. [From Database Community](#dasebase-perspective)
 1. [Consensus](#consensus)
 1. [Cryptography](#cryptography)
 1. [Block generation parameters](#block-generation-parameters)
@@ -32,6 +32,7 @@ New branch for my codebase.
 1. [License](#license)
 
 ---
+---
 
 ## General
 
@@ -51,6 +52,7 @@ New branch for my codebase.
 - **[Tutorial: Blockchains and Databases](http://www.vldb.org/pvldb/vol10/p2000-mohan.pdf)**. C Mohan. VLDB 2017. [Slides](https://drive.google.com/file/d/0B7lNUaak0bK1ZDhkak05VHA0d00/view)
 
 - **[Research Directions in Blockchain Data Management and Analytics](https://openproceedings.org/2018/conf/edbt/paper-227.pdf)**. Hoang Tam Vo, Ashish Kundu, Mukesh Mohania. EDBT 2018.
+
 
 ## Consensus
 
@@ -82,6 +84,7 @@ New branch for my codebase.
 - "ByzCoin": [Enhancing Bitcoin Security and Performance with Strong Consistency via Collective Signing](https://www.usenix.org/system/files/conference/usenixsecurity16/sec16_paper_kokoris-kogias.pdf). Kogias EK, Jovanovic P, Gailly N, Khoffi I, Gasser L, Ford B. USENIX '16.
 - [Cryptocurrencies without Proof of Work](http://fc16.ifca.ai/bitcoin/papers/BGM16.pdf). Bentov I, Gabizon A, Mizrahi A. FC '16.
 - [Ouroboros Praos: An adaptively-secure, semi-synchronous proof-of-stake protocol](http://eprint.iacr.org/2017/573.pdf). Bernardo D, Gazi P, Kiayias A, Russell A. Crypto '17.
+- [Ouroboros Genesis: Composable Proof-of-Stake Blockchains with Dynamic Availability](https://eprint.iacr.org/2018/378.pdf). Badertscher C, Gazi P, Kiayias A, Russell A, Zikas V. '18.
 
 ## Attacks
 
@@ -169,7 +172,7 @@ New branch for my codebase.
 - [Improving Authenticated Dynamic Dictionaries, with Applications to Cryptocurrencies](http://fc17.ifca.ai/preproceedings/paper_34.pdf). Reyzin L, Meshkov D, Chepurnoy A, Ivanov S. FC '17.
 - [Service-Oriented Sharding for Blockchains](http://fc17.ifca.ai/preproceedings/paper_73.pdf). Gencer AE, Van Renesse R, Sirer EG. FC '17.
 - [Revive: Rebalancing Off-Blockchain Payment Networks](https://eprint.iacr.org/2017/823.pdf). Khalil, R., & Gervais, A. CCS '17.
-- [Non-Interactive Proofs of Proof-of-Work](https://eprint.iacr.org/2017/963.pdf). Aggelos K, Andrew M, Dionysis Z. '17
+- [Non-Interactive Proofs of Proof-of-Work](https://eprint.iacr.org/2017/963.pdf). Kiayias A, Miller A, Zindros D. '17.
 
 ## Fungibility
 
@@ -224,12 +227,3 @@ New branch for my codebase.
 - [Storj A Peer-to-Peer Cloud Storage Network](https://storj.io/storj.pdf). Shawn W., Tome B., Josh B.,James P., Gordon H., Patrick G., Philip H., Chris P. '16
 - [IPFS - Content Addressed, Versioned, P2P File System](https://github.com/ipfs/papers/raw/master/ipfs-cap2pfs/ipfs-p2p-file-system.pdf). Benet J. '15
 - [BigchainDB: A Scalable Blockchain Database](https://www.bigchaindb.com/whitepaper/bigchaindb-whitepaper.pdf). McConaghy T, Marques R, Müller A, De Jonghe D, McConaghy T, McMullen G, Henderson R, Bellemare S, Granzotto A. '17
-
-
-## Reference
-
-[VLDB 2017](http://www.vldb.org/2017/)
-
-[A curated list of blockchain-related academic papers.](https://github.com/sindresorhus/awesome)
-
-
