@@ -10,7 +10,7 @@ New branch for my codebase.
 
 ## Table of Contents
 1. [General](#general)
-1. [From Database Community](#dasebase-perspective)
+1. [From Database Community](#database-perspective)
 1. [Consensus](#consensus)
 1. [Cryptography](#cryptography)
 1. [Block generation parameters](#block-generation-parameters)
