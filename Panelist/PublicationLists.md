@@ -1,5 +1,6 @@
 # 数据库
 
+期刊和会议列表详见[CCF分类](https://www.ccf.org.cn/jsjtxjgbxyfbjsccxt/)
 
 ### SIMGOD Conference
 
@@ -16,8 +17,14 @@
 
 * [Research Directions in Blockchain Data Management and Analytics](https://openproceedings.org/2018/conf/edbt/paper-227.pdf)
 
+### DASFAA
+
+* [EtherQL: A Query Layer for Blockchain System](https://link.springer.com/chapter/10.1007%2F978-3-319-55699-4_34)
+
 
 # 计算机体系结构
+
+期刊和会议列表详见[CCF分类](https://www.ccf.org.cn/jsjtxjgbxyfbjsccxt/)
 
 * OPODIS 2017 [Solida: A Blockchain Protocol Based on Reconfigurable Byzantine Consensus](https://arxiv.org/abs/1612.02916)
 * SOSP 17 [Algorand: Scaling Byzantine Agreements for Cryptocurrencies](https://people.csail.mit.edu/nickolai/papers/gilad-algorand-eprint.pdf)
