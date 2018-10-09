@@ -41,6 +41,7 @@
 
 * [PLOS One](https://journals.plos.org/plosone/)
 * ArXiv
+* [Cryptology ePrint Archive](https://eprint.iacr.org/)
 
 # 相关资源
 
