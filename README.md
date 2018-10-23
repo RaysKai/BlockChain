@@ -1,10 +1,10 @@
 # linkChain CodeBase (Written in Go!)
 
-Forked from [LinkChain](https://github.com/xixisese/linkchain/). 
+Forked from [LinkChain](https://github.com/xixisese/linkchain/).
 
 New branch for my codebase.
 
-# Blockchain Papers 
+# Blockchain Papers
 
 
 
@@ -99,11 +99,13 @@ New branch for my codebase.
 - [Bitcoin Covenants](http://fc16.ifca.ai/bitcoin/papers/MES16.pdf). Möser M, Eyal I, Sirer EG. FC '16.
 - [Enhancing Bitcoin Transactions with Covenants](http://fc17.ifca.ai/bitcoin/papers/bitcoin17-final28.pdf). O’Connor R, Piekarska M. FC '17.
 - [Hierarchical deterministic Bitcoin wallets that tolerate key leakage](http://fc15.ifca.ai/preproceedings/paper_15.pdf). Gutoski G, Stebila D. FC '15.
+- [A first look at the usability of bitcoin key management](https://arxiv.org/abs/1802.04351) S Eskandari, J Clark, D Barrera, E Stobert. NDSS Workshop on Usable Security (USEC) 2015
 
 ## Crime
 
 - [ZombieCoin: Powering Next-Generation Botnets with Bitcoin](http://fc15.ifca.ai/preproceedings/bitcoin/paper_15.pdf). Ali ST, McCorry P, Lee PH, Hao F. FC '15.
 - [The Bitcoin Brain Drain: A Short Paper on the Use and Abuse of Bitcoin Brain Wallets](http://fc16.ifca.ai/preproceedings/36_Vasek.pdf). Vasek M, Bonneau J, Castellucci R, Keith C, Moore T. FC '16.
+
 
 ## Economics
 
@@ -200,6 +202,7 @@ New branch for my codebase.
 - [Town crier: An authenticated data feed for smart contracts](http://delivery.acm.org/10.1145/2980000/2978326/p270-zhang.pdf?ip=46.176.188.9&id=2978326&acc=OA&key=4D4702B0C3E38B35%2E4D4702B0C3E38B35%2E4D4702B0C3E38B35%2E594C525CFFA2AFAF&CFID=923932938&CFTOKEN=56121949&__acm__=1492299159_38039f3afa858f241818fdcf190e0200). Zhang F, Cecchetti E, Croman K, Juels A, Shi E. CCS '16.
 - [A Smart Contract for Boardroom Voting with Maximum Voter Privacy](http://fc17.ifca.ai/preproceedings/paper_80.pdf). McCorry P, Shahandashti SF, Hao F. FC '17.
 - [Constant-deposit multiparty lotteries on Bitcoin](http://fc17.ifca.ai/bitcoin/papers/bitcoin17-final39.pdf). Bartoletti M, Zunino R. FC '17.
+- [On the feasibility of decentralized derivatives markets](https://arxiv.org/abs/1802.04915) S Eskandari, J Clark, V Sundaresan, M Adham. FC '17.
 
 ## Formal Methods
 
@@ -220,6 +223,7 @@ New branch for my codebase.
 - [Cryptographic Currencies from a Tech-Policy Perspective: Policy Issues and Technical Direction](http://fc15.ifca.ai/preproceedings/bitcoin/paper_16.pdf). McReynolds E, Lerner A, Scott W, Roesner F, Kohno T. FC '15.
 - [The Other Side of the Coin: User Experiences with Bitcoin Security and Privacy](http://fc16.ifca.ai/preproceedings/33_Krombholz.pdf). Krombholz K, Judmayer A, Gusenbauer M, Weippl E. FC '16.
 - [An analysis of Bitcoin OP_RETURN metadata](http://fc17.ifca.ai/bitcoin/papers/bitcoin17-final32.pdf). Bartoletti M, Pompianu L. FC '17.
+- [A first look at browser-based Cryptojacking](https://arxiv.org/abs/1803.02887) S Eskandari, A Leoutsarakos, T Mursch, J Clark. IEEE SECURITY & PRIVACY ON THE BLOCKCHAIN (IEEE S&B) 2018
 
 ## Applications
 
